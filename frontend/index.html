@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LabourGram - Find & Hire Reliable Labour</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">Labour<span>Gram</span></div>
+        <div class="nav-links">
+            <a href="#workers-section">Find Workers</a>
+            <a href="#how-it-works">How it Works</a>
+            <a href="#" onclick="showRegisterModal('provider')">Register as Worker</a>
+        </div>
+        <!-- Shown when logged OUT -->
+        <div class="auth-buttons" id="authButtons">
+            <button class="btn btn-secondary" onclick="showLoginModal()">Log In</button>
+            <button class="btn btn-primary" onclick="showRegisterModal('customer')">Sign Up</button>
+        </div>
+        <div class="user-menu" id="userMenu" style="display:none;">
+            <span class="user-greeting" id="userGreeting"></span>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-chart-line"></i> My Dashboard <span class="badge hidden" id="navBadge">0</span></button>
+            <button class="btn btn-secondary btn-sm btn-logout" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Hire Skilled Labour<br><span>On Demand, Anywhere.</span></h1>
+            <p>Connect with verified masons, electricians, agricultural workers, and more. Transparent pricing, instant booking, and reliable service.</p>
+            
+            <div class="search-box">
+                <div class="search-field">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <select id="industryFilter">
+                        <option value="">Any Industry</option>
+                        <option value="construction">Construction</option>
+                        <option value="agriculture">Agriculture</option>
+                        <option value="cleaning">Cleaning</option>
+                        <option value="electrical">Electrical</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="divider"></div>
+                <div class="search-field">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <input type="text" id="locationFilter" placeholder="Enter Location (e.g. Mumbai)">
+                </div>
+                <button class="btn btn-primary search-btn" onclick="searchWorkers()">
+                    <i class="fa-solid fa-magnifying-glass" style="color:white; margin-right:5px;"></i> Search
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section class="industries">
+        <div class="section-header">
+            <h2>Explore Industries</h2>
+            <p>Find specialized workers tailored for every sector</p>
+        </div>
+        <div class="industry-grid">
+            <div class="industry-card" onclick="filterByIndustry('construction')">
+                <div class="icon"><i class="fa-solid fa-trowel-bricks"></i></div>
+                <h3>Construction</h3>
+                <p>Masons, Carpenters, Painters</p>
+            </div>
+            <div class="industry-card" onclick="filterByIndustry('agriculture')">
+                <div class="icon"><i class="fa-solid fa-tractor"></i></div>
+                <h3>Agriculture</h3>
+                <p>Farm & Harvesting Workers</p>
+            </div>
+            <div class="industry-card" onclick="filterByIndustry('electrical')">
+                <div class="icon"><i class="fa-solid fa-plug"></i></div>
+                <h3>Electrical</h3>
+                <p>Industrial & Maintenance</p>
+            </div>
+            <div class="industry-card" onclick="filterByIndustry('cleaning')">
+                <div class="icon"><i class="fa-solid fa-broom"></i></div>
+                <h3>Cleaning</h3>
+                <p>Janitors, Housekeeping</p>
+            </div>
+            <div class="industry-card" onclick="filterByIndustry('other')">
+                <div class="icon"><i class="fa-solid fa-toolbox"></i></div>
+                <h3>Other</h3>
+                <p>Plumbing, Security, Transport</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="featured-workers" id="workers-section">
+        <div class="section-header">
+            <h2>Top Rated Workers Available Now</h2>
+            <p>Verified professionals ready to start on your project today</p>
+        </div>
+        <div class="worker-grid" id="workerGrid">
+            <!-- Workers injected by script.js -->
+        </div>
+        <div class="no-workers" id="noWorkersMsg" style="display:none;">
+            <i class="fa-solid fa-users-slash"></i>
+            <h3>No workers found</h3>
+            <p>Try a different search or be the first to <a href="#" onclick="showRegisterModal('provider')">register as a worker</a>!</p>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-header">
+            <h2>How It Works</h2>
+            <p style="color: #94A3B8; font-size: 1.1rem; margin-top: 10px;">The simplest way to hire quality labour</p>
+        </div>
+        <div class="steps-grid">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Search & Filter</h3>
+                <p>Find workers based on specific skills, industry, and exact location.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Review Profiles</h3>
+                <p>Check their verified skills, past ratings, and daily wage expectations.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Send Request</h3>
+                <p>Dispatch a hiring request instantly. The worker confirms via their app.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>Get Work Done</h3>
+                <p>Track progress, manage attendance, and rate your experience securely.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">Labour<span>Gram</span></div>
+            <p>© 2026 LabourGram. All rights reserved for Final Year Project.</p>
+        </div>
+    </footer>
+
+    <!-- ===== LOGIN MODAL ===== -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeAllModals()">&times;</button>
+            <h2>Welcome Back</h2>
+            <p class="modal-subtitle">Sign in to manage your hiring requests</p>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <div class="form-error" id="loginError"></div>
+                <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Log In</button>
+            </form>
+            <p class="modal-footer-text">Don't have an account? <a href="#" onclick="showRegisterModal('customer')">Sign Up</a></p>
+        </div>
+    </div>
+
+    <!-- ===== REGISTER MODAL ===== -->
+    <div class="modal-overlay" id="registerModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeAllModals()">&times;</button>
+            <h2>Create Account</h2>
+            <p class="modal-subtitle">Join LabourGram today</p>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="regName" required placeholder="Sujit Pardhi">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="regEmail" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="regPassword" required minlength="6" placeholder="Min 6 characters">
+                </div>
+                <div class="form-group">
+                    <label>I am a</label>
+                    <select id="regRole">
+                        <option value="customer">Customer (Hiring Labour)</option>
+                        <option value="provider">Labour Provider (Worker)</option>
+                    </select>
+                </div>
+                <!-- Provider-only fields -->
+                <div id="providerFields" style="display:none;">
+                    <div class="form-group">
+                        <label>Industry</label>
+                        <select id="regIndustry">
+                            <option value="Construction">Construction</option>
+                            <option value="Agriculture">Agriculture</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Cleaning">Cleaning</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Skills (e.g. Mason, Plumber)</label>
+                        <input type="text" id="regSkills" placeholder="Mason, Painter">
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="regLocation" placeholder="Mumbai, MH">
+                    </div>
+                    <div class="form-group">
+                        <label>Expected Daily Wage (₹)</label>
+                        <input type="number" id="regWage" placeholder="800" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Years of Experience</label>
+                        <input type="number" id="regExperience" placeholder="3" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Profile Picture (Optional)</label>
+                        <input type="file" id="regImage" accept="image/png, image/jpeg, image/webp" style="padding: 0.5rem; font-size: 0.9rem;">
+                    </div>
+                </div>
+                <div class="form-error" id="registerError"></div>
+                <button type="submit" class="btn btn-primary btn-full" id="registerBtn">Create Account</button>
+            </form>
+            <p class="modal-footer-text">Already have an account? <a href="#" onclick="showLoginModal()">Log In</a></p>
+        </div>
+    </div>
+
+    <!-- ===== HIRE REQUEST MODAL ===== -->
+    <div class="modal-overlay" id="hireModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeAllModals()">&times;</button>
+            <h2>Send Hiring Request</h2>
+            <p class="modal-subtitle">To: <strong id="hireWorkerName"></strong></p>
+            <form id="hireForm" onsubmit="handleHireRequest(event)">
+                <input type="hidden" id="hireProviderId">
+                <div class="form-group">
+                    <label>Job Description</label>
+                    <textarea id="hireJobDesc" required placeholder="Describe the work needed..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Date Needed</label>
+                    <input type="date" id="hireDateNeeded" required>
+                </div>
+                <div class="form-group">
+                    <label>Proposed Daily Wage (₹)</label>
+                    <input type="number" id="hireWage" required min="1" placeholder="800">
+                </div>
+                <div class="form-error" id="hireError"></div>
+                <button type="submit" class="btn btn-primary btn-full" id="hireBtn">Send Request</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== TOAST NOTIFICATION ===== -->
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

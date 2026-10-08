@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker Profile - LabourGram</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .profile-header {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--bg-light);
+        }
+        .profile-info h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+        .profile-info .role {
+            color: var(--text-light);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .profile-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-dark);
+            background: var(--bg-light);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+        }
+        .portfolio-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .portfolio-item {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 1px solid var(--border);
+        }
+        .portfolio-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Fullscreen Image Viewer */
+        .fs-viewer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .fs-viewer.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .fs-img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .fs-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .profile-stats {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-helmet-safety"></i>
+            Labour<span>Gram</span>
+        </a>
+        <div class="nav-links" style="display:flex; align-items:center;">
+            <a href="index.html">Home</a>
+            <div id="authLinks" class="auth-buttons"></div>
+        </div>
+    </nav>
+
+    <main style="max-width: 1200px; margin: 2rem auto; padding: 0 5%; min-height: 80vh;">
+        <div id="loading" style="text-align:center; padding: 3rem;">
+            <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--primary);"></i>
+        </div>
+        
+        <div id="profileContent" style="display:none;">
+            <div class="profile-header card">
+                <img id="wpImage" src="" alt="Profile Picture" class="profile-img">
+                <div class="profile-info">
+                    <h1 id="wpName">Loading...</h1>
+                    <div class="role" id="wpRole"></div>
+                    <div class="profile-stats">
+                        <div class="stat-item"><i class="fa-solid fa-industry"></i> <span id="wpIndustry"></span></div>
+                        <div class="stat-item"><i class="fa-solid fa-briefcase"></i> <span id="wpExp"></span></div>
+                        <div class="stat-item"><i class="fa-solid fa-location-dot"></i> <span id="wpLoc"></span></div>
+                        <div class="stat-item"><i class="fa-solid fa-indian-rupee-sign"></i> <span id="wpWage"></span>/day</div>
+                    </div>
+                    <div style="display:flex; gap: 1rem; align-items:center;">
+                        <span id="wpStatus" style="padding:0.5rem 1rem; border-radius:2rem; font-weight:bold; font-size:0.9rem;"></span>
+                        <div id="wpAction"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 2rem; padding: 2rem; border-radius: 1rem; background: var(--surface); box-shadow: var(--shadow-sm);">
+                <h2 style="margin-bottom: 1rem;">About Me</h2>
+                <p id="wpBio" style="color:var(--text-light); line-height:1.6;"></p>
+            </div>
+
+            <div class="card" id="portfolioSection" style="display:none; padding: 2rem; border-radius: 1rem; background: var(--surface); box-shadow: var(--shadow-sm);">
+                <h2 style="margin-bottom: 0.5rem;">Work Portfolio</h2>
+                <p style="color:var(--text-light); margin-bottom:1.5rem;">Click on any image to view it in full screen.</p>
+                <div class="portfolio-gallery" id="wpPortfolio"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Fullscreen Viewer -->
+    <div class="fs-viewer" id="fsViewer" onclick="closeFullscreen()">
+        <button class="fs-close">&times;</button>
+        <img src="" id="fsImage" class="fs-img" onclick="event.stopPropagation()">
+    </div>
+
+    <!-- Hire Modal (Reused) -->
+    <div class="modal-overlay" id="hireModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeAllModals()">&times;</button>
+            <h2>Send Hiring Request</h2>
+            <p class="modal-subtitle">To: <strong id="hireWorkerName"></strong></p>
+            <form id="hireForm" onsubmit="handleHireRequest(event)">
+                <input type="hidden" id="hireProviderId">
+                <div class="form-group">
+                    <label>Job Description</label>
+                    <textarea id="hireJobDesc" required placeholder="Describe the work needed..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Date Needed</label>
+                    <input type="date" id="hireDateNeeded" required>
+                </div>
+                <div class="form-group">
+                    <label>Proposed Daily Wage (₹)</label>
+                    <input type="number" id="hireWage" required min="1">
+                </div>
+                <div class="form-error" id="hireError"></div>
+                <button type="submit" class="btn btn-primary btn-full" id="hireBtn">Send Request</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+    <script src="worker.js"></script>
+</body>
+</html>

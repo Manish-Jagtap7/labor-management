@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+backend/labourgram.db
+
+# User Uploaded Media
+backend/uploads/
+uploads/
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# NOTE: .env is intentionally NOT ignored based on user request since it
+# currently only contains the non-confidential SQLite connection string.
+*.txt
+*.pdf

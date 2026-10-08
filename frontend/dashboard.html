@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - LabourGram</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: var(--bg); display: flex; flex-direction: column; min-height: 100vh; margin: 0; }
+        
+        .dash-nav {
+            background: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10;
+        }
+        .dash-nav h2 { margin: 0; color: var(--primary); font-size: 1.5rem; transition: color 0.2s; }
+        .dash-nav h2:hover { color: var(--secondary); }
+        
+        .dash-container {
+            display: flex; flex: 1; overflow: hidden;
+        }
+        
+        .dash-sidebar {
+            width: 250px; background: white; border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 1rem 0;
+        }
+        .dash-tab {
+            padding: 1rem 2rem; cursor: pointer; color: var(--text-light); font-weight: 500;
+            display: flex; align-items: center; gap: 0.75rem; border-left: 4px solid transparent;
+            transition: all 0.2s;
+        }
+        .dash-tab:hover { background: #f8fafc; }
+        .dash-tab.active { background: #f1f5f9; color: var(--primary); border-left-color: var(--primary); }
+        
+        .dash-main {
+            flex: 1; padding: 2rem; overflow-y: auto; background: var(--bg);
+        }
+        
+        .dash-section { display: none; }
+        .dash-section.active { display: block; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        .chat-list-card {
+            background: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+        }
+        .chat-list-details h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; }
+        .chat-list-details p { margin: 0; color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.25rem;}
+        
+        @media (max-width: 768px) {
+            .dash-container { flex-direction: column; }
+            .dash-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; justify-content: space-around; padding: 0; }
+            .dash-tab { border-left: none; border-bottom: 4px solid transparent; padding: 1rem; justify-content: center; flex: 1; }
+            .dash-tab.active { border-left-color: transparent; border-bottom-color: var(--primary); }
+            .form-grid { grid-template-columns: 1fr; }
+            .dash-main { padding: 1rem; }
+            .chat-list-card { flex-direction: column; align-items: flex-start; }
+            .chat-list-card .request-actions { width: 100%; display: flex; gap: 0.5rem; }
+            .chat-list-card .request-actions button { flex: 1; }
+        }
+        
+        /* Upload UI */
+        .pfp-upload-container {
+            display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;
+        }
+        .pfp-circle {
+            width: 120px; height: 120px; border-radius: 50%; background: #e2e8f0; display: flex;
+            justify-content: center; align-items: center; overflow: hidden; cursor: pointer;
+            position: relative; border: 2px solid var(--border); transition: all 0.2s;
+        }
+        .pfp-circle:hover { border-color: var(--primary); }
+        .pfp-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .pfp-circle i { font-size: 2rem; color: var(--text-light); }
+        .pfp-overlay {
+            position: absolute; bottom: 0; width: 100%; height: 30%; background: rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center; color: white;
+            font-size: 0.8rem; opacity: 0; transition: opacity 0.2s;
+        }
+        .pfp-circle:hover .pfp-overlay { opacity: 1; }
+
+        .portfolio-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem;
+        }
+        .portfolio-slot {
+            width: 100%; aspect-ratio: 1; background: #e2e8f0; border-radius: 0.5rem;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            position: relative; overflow: hidden; border: 2px dashed var(--border); transition: all 0.2s;
+        }
+        .portfolio-slot:hover { border-color: var(--primary); color: var(--primary); }
+        .portfolio-slot img { width: 100%; height: 100%; object-fit: cover; }
+        .portfolio-slot i { font-size: 1.5rem; color: var(--text-light); }
+        .portfolio-slot:hover i { color: var(--primary); }
+        
+        .delete-btn {
+            position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.9);
+            color: white; border: none; border-radius: 50%; width: 24px; height: 24px;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="dash-nav">
+        <h2 onclick="window.location.href='index.html'" style="cursor:pointer;"><i class="fa-solid fa-arrow-left" style="margin-right:10px;"></i> Dashboard</h2>
+        <div class="user-info" id="dashUserInfo" style="font-weight: 500; color: var(--text);"></div>
+    </nav>
+    
+    <div class="dash-container">
+        <aside class="dash-sidebar">
+            <div class="dash-tab active" onclick="switchTab('chats')" id="tab-chats"><i class="fa-regular fa-message"></i> Chats & Requests <span class="badge hidden" id="dashBadge">0</span></div>
+            <div class="dash-tab" onclick="switchTab('profile')" id="tab-profile"><i class="fa-regular fa-user"></i> My Profile</div>
+        </aside>
+        
+        <main class="dash-main">
+            <!-- CHATS SECTION -->
+            <section id="sec-chats" class="dash-section active">
+                <h3 style="margin-top:0; margin-bottom:1.5rem;"><i class="fa-regular fa-message"></i> Your Chats</h3>
+                <div id="chatsListContainer">
+                    <p style="color:var(--text-light);">Loading...</p>
+                </div>
+            </section>
+            
+            <!-- PROFILE SECTION -->
+            <section id="sec-profile" class="dash-section">
+                <h3 style="margin-top:0; margin-bottom:1.5rem;"><i class="fa-regular fa-user"></i> Profile Details</h3>
+                <div class="card" style="max-width: 600px;">
+                    <div class="pfp-upload-container">
+                        <div class="pfp-circle" onclick="document.getElementById('pfpInput').click()">
+                            <img id="pfpPreview" src="" style="display:none;">
+                            <i id="pfpPlaceholder" class="fa-solid fa-camera"></i>
+                            <div class="pfp-overlay">Upload</div>
+                        </div>
+                        <input type="file" id="pfpInput" style="display:none;" accept="image/*" onchange="handlePfpUpload(event)">
+                        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-light);">Profile Picture</p>
+                    </div>
+
+                    <form id="profileForm" onsubmit="updateProfile(event)">
+                        <div id="profileFormFields"></div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; width:100%;">Update Profile</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="dashboard.js"></script>
+</body>
+</html>
