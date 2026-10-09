@@ -85,6 +85,24 @@ def update_my_provider_profile(
         raise HTTPException(status_code=404, detail="Profile not found")
     return crud_profile.update_provider_profile(db=db, db_profile=profile, profile_in=profile_in)
 
+@router.put("/provider/agency/worker/{profile_id}", response_model=ProviderProfileResponse)
+def update_agency_worker_profile(
+    *,
+    db: Session = Depends(deps.get_db),
+    profile_id: int,
+    profile_in: ProviderProfileUpdate,
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    """Update an agency worker's profile."""
+    if current_user.role != UserRole.agency:
+        raise HTTPException(status_code=403, detail="Only agencies can update worker profiles")
+    
+    from app.models.profile import ProviderProfile
+    profile = db.query(ProviderProfile).filter(ProviderProfile.id == profile_id, ProviderProfile.agency_id == current_user.id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Worker profile not found or not managed by you")
+    return crud_profile.update_provider_profile(db=db, db_profile=profile, profile_in=profile_in)
+
 # --- Customer Profile Endpoints ---
 
 @router.post("/customer", response_model=CustomerProfileResponse)

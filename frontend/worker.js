@@ -41,7 +41,7 @@ function renderWorkerProfile(worker) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('profileContent').style.display = 'block';
 
-    const workerName = (worker.user && worker.user.full_name) ? worker.user.full_name : (worker._name || worker.skills.split(',')[0].trim() + ' Worker');
+    const workerName = (worker.user && worker.user.full_name) ? worker.user.full_name : (worker.full_name || worker.skills.split(',')[0].trim() + ' Worker');
     const image = worker.image_url || `https://source.unsplash.com/150x150/?${worker.industry},worker`;
 
     document.getElementById('wpImage').src = image;

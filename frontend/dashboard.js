@@ -67,6 +67,10 @@ async function loadChats() {
             return;
         }
         
+        if (role === 'agency' && currentAgencyWorkers.length === 0) {
+            try { await loadAgencyWorkers(); } catch(e) {}
+        }
+        
         container.innerHTML = requests.map(req => {
             const customerName = req.customer ? (req.customer.full_name || req.customer.email) : 'Unknown';
             const providerName = req.provider ? (req.provider.full_name || req.provider.email) : 'Unknown';
@@ -75,7 +79,9 @@ async function loadChats() {
                 : `<strong>Worker:</strong> ${providerName}<br><strong>Job:</strong> ${req.job_description}`;
                 
             if (role === 'agency' && req.profile_id) {
-                roleDetails += `<br><strong>For Worker ID:</strong> ${req.profile_id}`;
+                const w = currentAgencyWorkers.find(x => x.id === req.profile_id);
+                const wName = w ? (w.full_name || 'Worker') : req.profile_id;
+                roleDetails += `<br><strong>For Worker:</strong> ${wName}`;
             }
             
             let actions = '';
@@ -364,6 +370,8 @@ loadProfile();
 // --------------------------------
 // AGENCY WORKERS MANAGEMENT
 // --------------------------------
+let currentAgencyWorkers = [];
+
 if (currentUser.role === 'agency') {
     document.getElementById('tab-workers').style.display = 'flex';
     loadAgencyWorkers();
@@ -379,6 +387,7 @@ async function loadAgencyWorkers() {
         const wct = res.headers.get('content-type') || '';
         if (!wct.includes('application/json')) throw new Error('Server returned invalid response');
         const workers = await res.json();
+        currentAgencyWorkers = workers;
         
         if (workers.length === 0) {
             container.innerHTML = '<p style="color:var(--text-light); text-align:center; padding: 2rem; background:white; border-radius:1rem; border:1px solid var(--border);">No workers added yet.</p>';
@@ -395,6 +404,7 @@ async function loadAgencyWorkers() {
                 </div>
                 <div>
                     <span style="display:inline-block; padding:0.25rem 0.5rem; border-radius:0.5rem; font-size:0.8rem; background:${w.is_available ? '#dcfce7' : '#fef3c7'}; color:${w.is_available ? '#16a34a' : '#d97706'}">${w.is_available ? 'Available' : 'Busy'}</span>
+                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.5rem;" onclick="editAgencyWorker(${w.id})"><i class="fa-solid fa-pen"></i> Edit</button>
                 </div>
             </div>
         `).join('');
@@ -405,12 +415,35 @@ async function loadAgencyWorkers() {
 }
 
 function showAddWorkerForm() {
+    document.getElementById('addWorkerForm').reset();
+    document.getElementById('awId').value = '';
     document.getElementById('addWorkerFormContainer').style.display = 'block';
+    document.getElementById('addWorkerFormContainer').scrollIntoView({behavior: 'smooth'});
 }
 
 function hideAddWorkerForm() {
     document.getElementById('addWorkerFormContainer').style.display = 'none';
     document.getElementById('addWorkerForm').reset();
+    document.getElementById('awId').value = '';
+}
+
+function editAgencyWorker(id) {
+    const worker = currentAgencyWorkers.find(w => w.id === id);
+    if (!worker) return;
+    
+    document.getElementById('addWorkerForm').reset();
+    document.getElementById('awId').value = worker.id;
+    document.getElementById('awName').value = worker.full_name || '';
+    document.getElementById('awIndustry').value = worker.industry || 'Other';
+    document.getElementById('awSkills').value = worker.skills || '';
+    document.getElementById('awLocation').value = worker.location || '';
+    document.getElementById('awWage').value = worker.expected_wage || 1;
+    document.getElementById('awExperience').value = worker.experience_years || 0;
+    document.getElementById('awBio').value = worker.bio || '';
+    document.getElementById('awPortfolio').value = worker.portfolio_urls || '';
+    
+    document.getElementById('addWorkerFormContainer').style.display = 'block';
+    document.getElementById('addWorkerFormContainer').scrollIntoView({behavior: 'smooth'});
 }
 
 async function handleAddWorker(e) {
@@ -426,22 +459,33 @@ async function handleAddWorker(e) {
             imageUrl = await uploadFileToBackend(fileInput.files[0]);
         }
         
-        const res = await fetch(`${API_BASE}/profiles/provider`, {
-            method: 'POST',
+        const workerId = document.getElementById('awId').value;
+        const method = workerId ? 'PUT' : 'POST';
+        const url = workerId ? `${API_BASE}/profiles/provider/agency/worker/${workerId}` : `${API_BASE}/profiles/provider`;
+
+        const payload = {
+            full_name: document.getElementById('awName').value,
+            industry: document.getElementById('awIndustry').value,
+            skills: document.getElementById('awSkills').value,
+            location: document.getElementById('awLocation').value,
+            expected_wage: parseFloat(document.getElementById('awWage').value),
+            experience_years: parseInt(document.getElementById('awExperience').value),
+            bio: document.getElementById('awBio').value || null,
+            portfolio_urls: document.getElementById('awPortfolio').value || null,
+            is_available: true
+        };
+        
+        if (imageUrl) {
+            payload.image_url = imageUrl;
+        }
+        
+        const res = await fetch(url, {
+            method: method,
             headers: { 
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authToken}` 
             },
-            body: JSON.stringify({
-                full_name: document.getElementById('awName').value,
-                industry: document.getElementById('awIndustry').value,
-                skills: document.getElementById('awSkills').value,
-                location: document.getElementById('awLocation').value,
-                expected_wage: parseFloat(document.getElementById('awWage').value),
-                experience_years: parseInt(document.getElementById('awExperience').value),
-                is_available: true,
-                image_url: imageUrl
-            })
+            body: JSON.stringify(payload)
         });
         
         if (!res.ok) throw new Error(await res.text());

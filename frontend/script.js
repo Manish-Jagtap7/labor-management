@@ -382,7 +382,7 @@ function renderWorkers(workers) {
     grid.innerHTML = '';
 
     workers.forEach((worker, index) => {
-        const workerName = (worker.user && worker.user.full_name) ? worker.user.full_name : (worker._name || worker.skills.split(',')[0].trim() + ' Worker');
+        const workerName = (worker.user && worker.user.full_name) ? worker.user.full_name : (worker.full_name || worker.skills.split(',')[0].trim() + ' Worker');
         const image = worker.image_url || industryImages[worker.industry] || defaultImage;
 
         const card = document.createElement('div');

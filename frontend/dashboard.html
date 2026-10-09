@@ -152,6 +152,7 @@
                 <div id="addWorkerFormContainer" style="display:none; background:white; padding:1.5rem; border-radius:1rem; border:1px solid var(--border); margin-bottom:1.5rem;">
                     <h4 style="margin-top:0;">Add New Worker Profile</h4>
                     <form id="addWorkerForm" onsubmit="handleAddWorker(event)">
+                        <input type="hidden" id="awId">
                         <div class="form-grid">
                             <div class="form-group">
                                 <label>Full Name</label>
@@ -183,6 +184,14 @@
                                 <label>Experience (Years)</label>
                                 <input type="number" id="awExperience" required min="0">
                             </div>
+                        </div>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label>Bio (Optional)</label>
+                            <textarea id="awBio" rows="3" placeholder="Tell us about the worker's experience..."></textarea>
+                        </div>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label>Portfolio Images (comma separated URLs, Optional)</label>
+                            <input type="text" id="awPortfolio" placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg">
                         </div>
                         <div class="form-group" style="margin-top:1rem;">
                             <label>Profile Picture</label>
