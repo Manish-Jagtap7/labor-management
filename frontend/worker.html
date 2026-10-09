@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Worker Profile - LabourGram</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .profile-header {
@@ -105,11 +105,21 @@
             .profile-header {
                 flex-direction: column;
                 text-align: center;
+                gap: 1rem;
+                padding: 1.5rem;
             }
+            .profile-img { width: 120px; height: 120px; }
             .profile-stats {
                 flex-wrap: wrap;
                 justify-content: center;
+                gap: 0.5rem;
             }
+            .portfolio-gallery {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+            .stat-item { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+            .profile-info h1 { font-size: 1.75rem; }
         }
     </style>
 </head>
@@ -197,7 +207,7 @@
     
     <div class="toast" id="toast"></div>
 
-    <script src="script.js?v=4"></script>
-    <script src="worker.js?v=4"></script>
+    <script src="script.js?v=5"></script>
+    <script src="worker.js?v=5"></script>
 </body>
 </html>

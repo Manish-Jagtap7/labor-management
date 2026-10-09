@@ -598,11 +598,22 @@ footer { padding: 4rem 5%; text-align: center; border-top: 1px solid var(--borde
     .search-box { flex-direction: column; border-radius: 1.5rem; padding: 1.5rem; }
     .divider { width: 100%; height: 1px; margin: 1rem 0; }
     .search-btn { width: 100%; margin-top: 1rem; border-radius: 1rem; }
-    .hero h1 { font-size: 3rem; }
+    .hero h1 { font-size: 2.5rem; }
+    .hero p { font-size: 1rem; }
     .nav-links { display: none; }
-    .user-menu { gap: 0.5rem; }
+    .navbar { padding: 1rem; flex-wrap: wrap; gap: 1rem; }
+    .auth-buttons { display: flex; flex-direction: row; width: 100%; justify-content: center; gap: 0.5rem; }
+    .auth-buttons .btn { flex: 1; padding: 0.5rem; font-size: 0.9rem; }
+    .user-menu { flex-direction: column; width: 100%; gap: 0.5rem; text-align: center; }
+    .user-menu .btn { width: 100%; }
     .user-greeting { display: none; }
-    .modal { padding: 2rem; width: 95%; }
+    .modal { padding: 1.5rem; width: 95%; max-height: 90vh; overflow-y: auto; }
+}
+@media (max-width: 600px) {
+    .industry-grid { grid-template-columns: 1fr; }
+    .worker-grid { grid-template-columns: 1fr; }
+    .hero { padding: 3rem 1rem; }
+    .form-group input, .form-group select, .form-group textarea { font-size: 16px; } /* Prevents iOS zoom */
 }
 
 /* Chat UI */
