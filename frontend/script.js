@@ -56,6 +56,8 @@ async function apiPost(endpoint, body, useAuth = false) {
     const headers = { 'Content-Type': 'application/json' };
     if (useAuth && authToken) headers['Authorization'] = `Bearer ${authToken}`;
     const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error(res.ok ? 'Server returned non-JSON response' : `Request failed (${res.status})`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Something went wrong');
     return data;
@@ -65,6 +67,8 @@ async function apiGet(endpoint, useAuth = false) {
     const headers = {};
     if (useAuth && authToken) headers['Authorization'] = `Bearer ${authToken}`;
     const res = await fetch(`${API_BASE}${endpoint}`, { headers });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error(res.ok ? 'Server returned non-JSON response' : `Request failed (${res.status})`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Something went wrong');
     return data;
@@ -74,6 +78,8 @@ async function apiPut(endpoint, body, useAuth = false) {
     const headers = { 'Content-Type': 'application/json' };
     if (useAuth && authToken) headers['Authorization'] = `Bearer ${authToken}`;
     const res = await fetch(`${API_BASE}${endpoint}`, { method: 'PUT', headers, body: JSON.stringify(body) });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error(res.ok ? 'Server returned non-JSON response' : `Request failed (${res.status})`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Something went wrong');
     return data;
@@ -81,6 +87,8 @@ async function apiPut(endpoint, body, useAuth = false) {
 
 async function apiFormPost(endpoint, formData) {
     const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', body: formData });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error(res.ok ? 'Server returned non-JSON response' : `Request failed (${res.status})`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Something went wrong');
     return data;
@@ -293,6 +301,8 @@ async function fetchActiveRequests() {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         if(!res.ok) return;
+        const ct = res.headers.get('content-type') || '';
+        if(!ct.includes('application/json')) return;
         const requests = await res.json();
         
         // Fetch unread messages count
@@ -302,8 +312,11 @@ async function fetchActiveRequests() {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
             if (unreadRes.ok) {
-                const unreadData = await unreadRes.json();
-                unreadCount = unreadData.unread_count || 0;
+                const uct = unreadRes.headers.get('content-type') || '';
+                if (uct.includes('application/json')) {
+                    const unreadData = await unreadRes.json();
+                    unreadCount = unreadData.unread_count || 0;
+                }
             }
         } catch (e) { console.error("Failed to fetch unread count", e); }
         

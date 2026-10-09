@@ -23,6 +23,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error('Failed to load worker profile.');
         }
 
+        // Safety check: ensure we got JSON back, not HTML
+        const ct = response.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+            throw new Error('Server returned an invalid response. Please try again.');
+        }
+
         const worker = await response.json();
         renderWorkerProfile(worker);
     } catch (err) {

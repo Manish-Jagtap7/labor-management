@@ -23,7 +23,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Serve the frontend
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend"))
 if os.path.exists(frontend_path):
@@ -35,11 +35,15 @@ if os.path.exists(frontend_path):
 
     @app.get("/{full_path:path}")
     def catch_all(full_path: str):
+        # NEVER serve HTML for API paths — return a proper JSON 404
+        if full_path.startswith("api/"):
+            return JSONResponse(status_code=404, content={"detail": "API endpoint not found"})
         file_path = os.path.join(frontend_path, full_path)
-        if os.path.exists(file_path):
+        if os.path.exists(file_path) and os.path.isfile(file_path):
             return FileResponse(file_path)
         return FileResponse(os.path.join(frontend_path, "index.html"))
 else:
     @app.get("/")
     def root():
         return {"message": f"Welcome to the {settings.PROJECT_NAME} API"}
+

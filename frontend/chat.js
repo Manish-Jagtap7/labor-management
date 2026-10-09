@@ -23,6 +23,8 @@ async function initChat() {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         if (!res.ok) throw new Error('Failed to load chat history');
+        const chatCt = res.headers.get('content-type') || '';
+        if (!chatCt.includes('application/json')) throw new Error('Server returned invalid response');
         const history = await res.json();
         
         // Mark as read

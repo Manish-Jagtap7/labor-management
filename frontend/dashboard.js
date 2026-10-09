@@ -29,6 +29,8 @@ async function loadChats() {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         if (!res.ok) throw new Error('Failed to load chats');
+        const rct = res.headers.get('content-type') || '';
+        if (!rct.includes('application/json')) throw new Error('Server returned invalid response');
         const requests = await res.json();
         
         // Fetch unread messages count
@@ -38,8 +40,11 @@ async function loadChats() {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
             if (unreadRes.ok) {
-                const unreadData = await unreadRes.json();
-                unreadCount = unreadData.unread_count || 0;
+                const uct = unreadRes.headers.get('content-type') || '';
+                if (uct.includes('application/json')) {
+                    const unreadData = await unreadRes.json();
+                    unreadCount = unreadData.unread_count || 0;
+                }
             }
         } catch (e) {}
 
@@ -139,7 +144,8 @@ async function loadProfile() {
         
         let profile = {};
         if (res.ok) {
-            profile = await res.json();
+            const pct = res.headers.get('content-type') || '';
+            if (pct.includes('application/json')) profile = await res.json();
             if (profile.image_url) {
                 document.getElementById('pfpPreview').src = profile.image_url;
                 document.getElementById('pfpPreview').style.display = 'block';
@@ -242,7 +248,8 @@ async function updateProfile(e) {
     }
     
     try {
-        const res = await fetch(`${API_BASE}/profiles/${role}/me`, {
+        const endpointRole = (role === 'agency') ? 'customer' : role;
+        const res = await fetch(`${API_BASE}/profiles/${endpointRole}/me`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
             body: JSON.stringify(payload)
@@ -250,7 +257,7 @@ async function updateProfile(e) {
         
         if (!res.ok) {
             // Profile might not exist, so POST it instead
-            const postRes = await fetch(`${API_BASE}/profiles/${role}`, {
+            const postRes = await fetch(`${API_BASE}/profiles/${endpointRole}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
                 body: JSON.stringify(payload)
@@ -369,7 +376,8 @@ async function loadAgencyWorkers() {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         if (!res.ok) throw new Error('Failed to load workers');
-        
+        const wct = res.headers.get('content-type') || '';
+        if (!wct.includes('application/json')) throw new Error('Server returned invalid response');
         const workers = await res.json();
         
         if (workers.length === 0) {
