@@ -6,7 +6,9 @@ class ProviderProfile(Base):
     __tablename__ = "provider_profiles"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True) # Null if managed by agency
+    agency_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    full_name = Column(String, nullable=True) # Used if agency managed
     
     industry = Column(String, index=True, nullable=False) # e.g., Construction, Agriculture
     skills = Column(String, nullable=False) # e.g., "Mason, Carpenter"
@@ -18,7 +20,8 @@ class ProviderProfile(Base):
     image_url = Column(Text, nullable=True)
     portfolio_urls = Column(Text, nullable=True) # comma separated image urls
 
-    user = relationship("User", backref="provider_profile")
+    user = relationship("User", foreign_keys=[user_id], backref="provider_profile")
+    agency = relationship("User", foreign_keys=[agency_id], backref="managed_labours")
 
 class CustomerProfile(Base):
     __tablename__ = "customer_profiles"

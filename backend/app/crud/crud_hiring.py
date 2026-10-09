@@ -6,6 +6,7 @@ def create_hiring_request(db: Session, request_in: HiringRequestCreate, customer
     db_request = HiringRequest(
         customer_id=customer_id,
         provider_id=request_in.provider_id,
+        profile_id=request_in.profile_id,
         job_description=request_in.job_description,
         date_needed=request_in.date_needed,
         proposed_wage=request_in.proposed_wage

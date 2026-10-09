@@ -22,8 +22,8 @@ def create_request(
     
     # Check if provider exists and is actually a provider
     provider = crud_user.get_user(db, user_id=request_in.provider_id)
-    if not provider or provider.role != UserRole.provider:
-        raise HTTPException(status_code=404, detail="Labour provider not found or invalid user type.")
+    if not provider or provider.role not in [UserRole.provider, UserRole.agency]:
+        raise HTTPException(status_code=404, detail="Labour provider or agency not found or invalid user type.")
         
     # Check for existing pending or accepted request to same provider
     from app.models.hiring import HiringRequest, RequestStatus
@@ -58,7 +58,7 @@ def get_provider_requests(
     limit: int = 20,
 ) -> Any:
     """Provider views all incoming hiring requests."""
-    if current_user.role != UserRole.provider:
+    if current_user.role not in [UserRole.provider, UserRole.agency]:
         raise HTTPException(status_code=403, detail="Not authorized.")
     return crud_hiring.get_requests_for_provider(db, provider_id=current_user.id, skip=skip, limit=limit)
 
@@ -71,7 +71,7 @@ def update_request_status(
     current_user: User = Depends(deps.get_current_user),
 ) -> Any:
     """Provider accepts, declines, or marks a request as completed."""
-    if current_user.role != UserRole.provider:
+    if current_user.role not in [UserRole.provider, UserRole.agency]:
         raise HTTPException(status_code=403, detail="Not authorized.")
         
     db_request = crud_hiring.get_hiring_request(db, request_id=request_id)

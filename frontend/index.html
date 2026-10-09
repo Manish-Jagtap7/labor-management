@@ -187,7 +187,8 @@
                     <label>I am a</label>
                     <select id="regRole">
                         <option value="customer">Customer (Hiring Labour)</option>
-                        <option value="provider">Labour Provider (Worker)</option>
+                        <option value="provider">Individual Worker (Labour)</option>
+                        <option value="agency">Agency / Labour Provider</option>
                     </select>
                 </div>
                 <!-- Provider-only fields -->
@@ -238,6 +239,7 @@
             <p class="modal-subtitle">To: <strong id="hireWorkerName"></strong></p>
             <form id="hireForm" onsubmit="handleHireRequest(event)">
                 <input type="hidden" id="hireProviderId">
+                <input type="hidden" id="hireProfileId">
                 <div class="form-group">
                     <label>Job Description</label>
                     <textarea id="hireJobDesc" required placeholder="Describe the work needed..." rows="3"></textarea>

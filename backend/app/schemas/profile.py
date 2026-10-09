@@ -10,6 +10,7 @@ class ProviderProfileBase(BaseModel):
     location: str
     expected_wage: float = Field(gt=0)
     is_available: bool = True
+    full_name: Optional[str] = None
     bio: Optional[str] = None
     image_url: Optional[str] = None
     portfolio_urls: Optional[str] = None
@@ -27,8 +28,10 @@ class ProviderProfileUpdate(ProviderProfileBase):
 
 class ProviderProfileResponse(ProviderProfileBase):
     id: int
-    user_id: int
+    user_id: Optional[int] = None
+    agency_id: Optional[int] = None
     user: Optional['UserResponse'] = None
+    agency: Optional['UserResponse'] = None
 
     class Config:
         from_attributes = True

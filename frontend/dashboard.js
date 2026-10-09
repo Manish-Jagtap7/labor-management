@@ -23,7 +23,7 @@ async function loadChats() {
     const container = document.getElementById('chatsListContainer');
     try {
         const role = currentUser.role;
-        const endpoint = role === 'provider' ? '/hiring/provider/incoming-requests' : '/hiring/customer/my-requests';
+        const endpoint = (role === 'provider' || role === 'agency') ? '/hiring/provider/incoming-requests' : '/hiring/customer/my-requests';
         
         const res = await fetch(`${API_BASE}${endpoint}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
@@ -65,12 +65,16 @@ async function loadChats() {
         container.innerHTML = requests.map(req => {
             const customerName = req.customer ? (req.customer.full_name || req.customer.email) : 'Unknown';
             const providerName = req.provider ? (req.provider.full_name || req.provider.email) : 'Unknown';
-            const roleDetails = role === 'provider' 
+            let roleDetails = (role === 'provider' || role === 'agency') 
                 ? `<strong>Customer:</strong> ${customerName}<br><strong>Date Needed:</strong> ${req.date_needed}` 
                 : `<strong>Worker:</strong> ${providerName}<br><strong>Job:</strong> ${req.job_description}`;
+                
+            if (role === 'agency' && req.profile_id) {
+                roleDetails += `<br><strong>For Worker ID:</strong> ${req.profile_id}`;
+            }
             
             let actions = '';
-            if (role === 'provider' && req.status === 'pending') {
+            if ((role === 'provider' || role === 'agency') && req.status === 'pending') {
                 actions = `
                     <div class="request-actions" style="display:flex; gap:0.5rem;">
                         <button class="btn btn-primary btn-sm" onclick="updateReqStatus(${req.id}, 'accepted')">Accept</button>
@@ -128,7 +132,8 @@ async function loadProfile() {
     const fields = document.getElementById('profileFormFields');
     try {
         const role = currentUser.role;
-        const res = await fetch(`${API_BASE}/profiles/${role}/me`, {
+        const endpointRole = (role === 'agency') ? 'customer' : role; // Agency uses customer endpoint for basic profile
+        const res = await fetch(`${API_BASE}/profiles/${endpointRole}/me`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         
@@ -142,10 +147,10 @@ async function loadProfile() {
             }
         }
 
-        if (role === 'customer') {
+        if (role === 'customer' || role === 'agency') {
             fields.innerHTML = `
                 <div class="form-group">
-                    <label>Company Name (Optional)</label>
+                    <label>Company/Agency Name (Optional)</label>
                     <input type="text" id="prof_company" value="${profile.company_name || ''}">
                 </div>
                 <div class="form-group">
@@ -348,3 +353,99 @@ function removePortfolioImage(index) {
 // Init
 loadChats();
 loadProfile();
+
+// --------------------------------
+// AGENCY WORKERS MANAGEMENT
+// --------------------------------
+if (currentUser.role === 'agency') {
+    document.getElementById('tab-workers').style.display = 'flex';
+    loadAgencyWorkers();
+}
+
+async function loadAgencyWorkers() {
+    const container = document.getElementById('agencyWorkersListContainer');
+    try {
+        const res = await fetch(`${API_BASE}/profiles/provider/agency/workers`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (!res.ok) throw new Error('Failed to load workers');
+        
+        const workers = await res.json();
+        
+        if (workers.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-light); text-align:center; padding: 2rem; background:white; border-radius:1rem; border:1px solid var(--border);">No workers added yet.</p>';
+            return;
+        }
+        
+        container.innerHTML = workers.map(w => `
+            <div class="card" style="margin-bottom:1rem; padding:1.5rem; display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap;">
+                <img src="${w.image_url || 'https://via.placeholder.com/150'}" style="width:60px; height:60px; border-radius:50%; object-fit:cover;">
+                <div style="flex:1; min-width:200px;">
+                    <h4 style="margin:0 0 0.25rem 0;">${w.full_name || 'Worker'}</h4>
+                    <p style="margin:0; color:var(--text-light); font-size:0.9rem;">${w.skills} • ${w.industry}</p>
+                    <p style="margin:0; font-size:0.9rem;"><strong>Wage:</strong> ₹${w.expected_wage}/day • <strong>Exp:</strong> ${w.experience_years} yrs</p>
+                </div>
+                <div>
+                    <span style="display:inline-block; padding:0.25rem 0.5rem; border-radius:0.5rem; font-size:0.8rem; background:${w.is_available ? '#dcfce7' : '#fef3c7'}; color:${w.is_available ? '#16a34a' : '#d97706'}">${w.is_available ? 'Available' : 'Busy'}</span>
+                </div>
+            </div>
+        `).join('');
+        
+    } catch(err) {
+        container.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+    }
+}
+
+function showAddWorkerForm() {
+    document.getElementById('addWorkerFormContainer').style.display = 'block';
+}
+
+function hideAddWorkerForm() {
+    document.getElementById('addWorkerFormContainer').style.display = 'none';
+    document.getElementById('addWorkerForm').reset();
+}
+
+async function handleAddWorker(e) {
+    e.preventDefault();
+    const btn = document.getElementById('awSubmitBtn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    
+    try {
+        let imageUrl = null;
+        const fileInput = document.getElementById('awImage');
+        if (fileInput.files && fileInput.files[0]) {
+            imageUrl = await uploadFileToBackend(fileInput.files[0]);
+        }
+        
+        const res = await fetch(`${API_BASE}/profiles/provider`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}` 
+            },
+            body: JSON.stringify({
+                full_name: document.getElementById('awName').value,
+                industry: document.getElementById('awIndustry').value,
+                skills: document.getElementById('awSkills').value,
+                location: document.getElementById('awLocation').value,
+                expected_wage: parseFloat(document.getElementById('awWage').value),
+                experience_years: parseInt(document.getElementById('awExperience').value),
+                is_available: true,
+                image_url: imageUrl
+            })
+        });
+        
+        if (!res.ok) throw new Error(await res.text());
+        
+        showToast('Worker profile added!', 'success');
+        hideAddWorkerForm();
+        loadAgencyWorkers();
+        
+    } catch(err) {
+        showToast(err.message, 'error');
+    } finally {
+        btn.textContent = 'Save Worker';
+        btn.disabled = false;
+    }
+}

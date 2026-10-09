@@ -7,12 +7,15 @@ from app.schemas.profile import ProviderProfileCreate, ProviderProfileUpdate, Cu
 def get_provider_profile_by_user(db: Session, user_id: int):
     return db.query(ProviderProfile).filter(ProviderProfile.user_id == user_id).first()
 
-def create_provider_profile(db: Session, profile: ProviderProfileCreate, user_id: int):
-    db_profile = ProviderProfile(**profile.model_dump(), user_id=user_id)
+def create_provider_profile(db: Session, profile: ProviderProfileCreate, user_id: Optional[int] = None, agency_id: Optional[int] = None):
+    db_profile = ProviderProfile(**profile.model_dump(), user_id=user_id, agency_id=agency_id)
     db.add(db_profile)
     db.commit()
     db.refresh(db_profile)
     return db_profile
+
+def get_provider_profiles_by_agency(db: Session, agency_id: int):
+    return db.query(ProviderProfile).filter(ProviderProfile.agency_id == agency_id).all()
 
 def update_provider_profile(db: Session, db_profile: ProviderProfile, profile_in: ProviderProfileUpdate):
     update_data = profile_in.model_dump(exclude_unset=True)

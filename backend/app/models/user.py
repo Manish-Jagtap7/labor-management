@@ -5,6 +5,7 @@ from app.core.database import Base
 class UserRole(str, enum.Enum):
     customer = "customer"
     provider = "provider"
+    agency = "agency"
     admin = "admin"
 
 class User(Base):

@@ -16,7 +16,8 @@ class HiringRequest(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    provider_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    provider_id = Column(Integer, ForeignKey("users.id"), nullable=False) # Refers to the User (Individual or Agency)
+    profile_id = Column(Integer, ForeignKey("provider_profiles.id"), nullable=True) # Refers to the specific labour profile
     
     job_description = Column(String, nullable=False)
     date_needed = Column(String, nullable=False) # Simplified as string for this MVP

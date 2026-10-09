@@ -110,6 +110,7 @@
         <aside class="dash-sidebar">
             <div class="dash-tab active" onclick="switchTab('chats')" id="tab-chats"><i class="fa-regular fa-message"></i> Chats & Requests <span class="badge hidden" id="dashBadge">0</span></div>
             <div class="dash-tab" onclick="switchTab('profile')" id="tab-profile"><i class="fa-regular fa-user"></i> My Profile</div>
+            <div class="dash-tab" onclick="switchTab('workers')" id="tab-workers" style="display:none;"><i class="fa-solid fa-users"></i> My Workers</div>
         </aside>
         
         <main class="dash-main">
@@ -139,6 +140,62 @@
                         <div id="profileFormFields"></div>
                         <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; width:100%;">Update Profile</button>
                     </form>
+                </div>
+            </section>
+
+            <!-- AGENCY WORKERS SECTION -->
+            <section id="sec-workers" class="dash-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <h3 style="margin:0;"><i class="fa-solid fa-users"></i> Managed Workers</h3>
+                    <button class="btn btn-primary" onclick="showAddWorkerForm()"><i class="fa-solid fa-plus"></i> Add New Worker</button>
+                </div>
+                <div id="addWorkerFormContainer" style="display:none; background:white; padding:1.5rem; border-radius:1rem; border:1px solid var(--border); margin-bottom:1.5rem;">
+                    <h4 style="margin-top:0;">Add New Worker Profile</h4>
+                    <form id="addWorkerForm" onsubmit="handleAddWorker(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="awName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Industry</label>
+                                <select id="awIndustry" required>
+                                    <option value="Construction">Construction</option>
+                                    <option value="Agriculture">Agriculture</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Cleaning">Cleaning</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Skills (comma separated)</label>
+                                <input type="text" id="awSkills" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Location</label>
+                                <input type="text" id="awLocation" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Expected Wage (₹)</label>
+                                <input type="number" id="awWage" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Experience (Years)</label>
+                                <input type="number" id="awExperience" required min="0">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label>Profile Picture</label>
+                            <input type="file" id="awImage" accept="image/*">
+                        </div>
+                        <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                            <button type="submit" class="btn btn-primary" id="awSubmitBtn">Save Worker</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideAddWorkerForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="agencyWorkersListContainer">
+                    <p style="color:var(--text-light);">Loading workers...</p>
                 </div>
             </section>
         </main>

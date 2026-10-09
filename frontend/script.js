@@ -150,7 +150,9 @@ async function handleLogin(e) {
 
         saveAuth(data.access_token, user);
         closeAllModals();
-        showToast('Welcome back! 🎉', 'success');
+        sessionStorage.setItem('pendingToast', 'Welcome back! 🎉');
+        sessionStorage.setItem('pendingToastType', 'success');
+        window.location.reload();
     } catch (err) {
         errEl.textContent = err.message;
     } finally {
@@ -232,8 +234,8 @@ async function handleRegister(e) {
                 is_available: true,
                 image_url: imageUrl
             }, true);
-        } else {
-            // Create customer profile
+        } else if (role === 'customer' || role === 'agency') {
+            // Create basic profile
             await apiPost('/profiles/customer', {
                 company_name: fullName,
                 location: ''
@@ -382,7 +384,7 @@ function renderWorkers(workers) {
                 <div class="worker-header">
                     <div class="worker-name">${workerName}</div>
                 </div>
-                <div class="worker-role">${worker.skills}</div>
+                <div class="worker-role">${worker.skills} ${worker.agency ? `<br><small style="color:var(--primary); font-weight:bold;">Managed by ${worker.agency.full_name}</small>` : ''}</div>
                 <div class="worker-meta">
                     <span class="worker-tag"><i class="fa-solid fa-industry"></i> ${worker.industry}</span>
                     <span class="worker-tag"><i class="fa-solid fa-briefcase"></i> ${worker.experience_years} yrs exp</span>
@@ -398,7 +400,7 @@ function renderWorkers(workers) {
         card.addEventListener('click', (e) => {
             // Prevent navigating if user clicked the hire button
             if(e.target.closest('button')) return;
-            window.location.href = `worker.html?id=${worker.user_id}`;
+            window.location.href = `worker.html?id=${worker.id}`;
         });
         card.style.cursor = 'pointer';
         grid.appendChild(card);
@@ -411,15 +413,19 @@ function getWorkerActionHtml(worker, workerName) {
     if(!currentUser || currentUser.role !== 'customer') {
         return ``; // Providers shouldn't see hire buttons at all
     }
-    const req = userActiveRequests[worker.user_id];
+    const ownerId = worker.agency_id || worker.user_id;
+    // Check if we have an active request for this specific profile ID, not just the user ID
+    // Wait, userActiveRequests needs to be keyed by profile ID instead of user ID
+    const req = userActiveRequests[worker.id];
+    
     if(!req) {
-        return `<button class="btn btn-primary hire-btn" onclick="openHireModal(${worker.user_id}, '${workerName.replace(/'/g, "\\'")}', ${worker.expected_wage})">Request to Hire</button>`;
+        return `<button class="btn btn-primary hire-btn" onclick="openHireModal(${ownerId}, ${worker.id}, '${workerName.replace(/'/g, "\\'")}', ${worker.expected_wage})">Request to Hire</button>`;
     } else if (req.status === 'pending') {
         return `<button class="btn btn-secondary hire-btn" style="background:#e2e8f0; color:var(--text-light); border:none; pointer-events:none;">Request Sent</button>`;
     } else if (req.status === 'accepted') {
         return `<button class="btn btn-primary hire-btn" style="background:#22c55e;" onclick="window.location.href='chat.html?id=${req.id}'"><i class="fa-solid fa-message"></i> Start Chat</button>`;
     }
-    return `<button class="btn btn-primary hire-btn" onclick="openHireModal(${worker.user_id}, '${workerName.replace(/'/g, "\\'")}', ${worker.expected_wage})">Request to Hire</button>`;
+    return `<button class="btn btn-primary hire-btn" onclick="openHireModal(${ownerId}, ${worker.id}, '${workerName.replace(/'/g, "\\'")}', ${worker.expected_wage})">Request to Hire</button>`;
 }
 
 // ================================
@@ -433,19 +439,20 @@ function filterByIndustry(industry) {
 // ================================
 // HIRING REQUEST
 // ================================
-function openHireModal(providerId, workerName, suggestedWage) {
+function openHireModal(providerId, profileId, workerName, suggestedWage) {
     if (!currentUser) {
         showToast('Please log in first to send a hiring request.', 'warning');
         showLoginModal();
         return;
     }
     const role = localStorage.getItem('user_role');
-    if (role === 'provider') {
+    if (role === 'provider' || role === 'agency') {
         showToast('Only customers can send hiring requests.', 'warning');
         return;
     }
 
     document.getElementById('hireProviderId').value = providerId;
+    document.getElementById('hireProfileId').value = profileId;
     document.getElementById('hireWorkerName').textContent = workerName;
     document.getElementById('hireWage').value = suggestedWage;
     document.getElementById('hireError').textContent = '';
@@ -474,6 +481,7 @@ async function handleHireRequest(e) {
 
         await apiPost('/hiring/request', {
             provider_id: providerId,
+            profile_id: parseInt(document.getElementById('hireProfileId').value) || null,
             job_description: document.getElementById('hireJobDesc').value,
             date_needed: document.getElementById('hireDateNeeded').value,
             proposed_wage: parseFloat(document.getElementById('hireWage').value)

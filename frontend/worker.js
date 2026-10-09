@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await fetchActiveRequests(); // Ensure we have the user's active requests before rendering buttons
         
-        const response = await fetch(`${API_BASE}/profiles/provider/${workerId}`, {
+        const response = await fetch(`${API_BASE}/profiles/provider/profile/${workerId}`, {
             headers: {
                 'Authorization': authToken ? `Bearer ${authToken}` : ''
             }

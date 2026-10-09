@@ -6,6 +6,7 @@ from app.schemas.user import UserResponse
 
 class HiringRequestBase(BaseModel):
     provider_id: int
+    profile_id: Optional[int] = None
     job_description: str
     date_needed: str
     proposed_wage: float = Field(gt=0)
