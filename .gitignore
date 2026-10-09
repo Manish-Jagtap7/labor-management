@@ -26,5 +26,5 @@ Thumbs.db
 
 # NOTE: .env is intentionally NOT ignored based on user request since it
 # currently only contains the non-confidential SQLite connection string.
-*.txt
+implementation.txt
 *.pdf

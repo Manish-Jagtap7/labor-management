@@ -22,6 +22,24 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-@app.get("/")
-def root():
-    return {"message": f"Welcome to the {settings.PROJECT_NAME} API"}
+# Serve the frontend
+from fastapi.responses import FileResponse
+
+frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend"))
+if os.path.exists(frontend_path):
+    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+
+    @app.get("/")
+    def serve_frontend():
+        return FileResponse(os.path.join(frontend_path, "index.html"))
+
+    @app.get("/{full_path:path}")
+    def catch_all(full_path: str):
+        file_path = os.path.join(frontend_path, full_path)
+        if os.path.exists(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(frontend_path, "index.html"))
+else:
+    @app.get("/")
+    def root():
+        return {"message": f"Welcome to the {settings.PROJECT_NAME} API"}

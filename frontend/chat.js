@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = '/api/v1';
 const authToken = localStorage.getItem('token');
 const currentUser = JSON.parse(localStorage.getItem('user'));
 
@@ -42,7 +42,8 @@ async function initChat() {
         }
 
         // Connect WebSocket
-        chatSocket = new WebSocket(`ws://localhost:8000/api/v1/chat/ws/${requestId}?token=${authToken}`);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        chatSocket = new WebSocket(`${wsProtocol}//${window.location.host}/api/v1/chat/ws/${requestId}?token=${authToken}`);
         
         chatSocket.onmessage = function(event) {
             // Remove empty state message if it exists
