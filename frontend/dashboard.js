@@ -371,6 +371,52 @@ loadProfile();
 // AGENCY WORKERS MANAGEMENT
 // --------------------------------
 let currentAgencyWorkers = [];
+let currentAwPortfolioUrls = [];
+
+function renderAwPortfolioGrid(urlsStr) {
+    const grid = document.getElementById('awPortfolioGrid');
+    if (!grid) return;
+    
+    currentAwPortfolioUrls = urlsStr ? urlsStr.split(',').map(s=>s.trim()).filter(s=>s) : [];
+    let html = '';
+    
+    for(let i = 0; i < 5; i++) {
+        if (i < currentAwPortfolioUrls.length) {
+            html += `
+                <div class="portfolio-slot">
+                    <img src="${currentAwPortfolioUrls[i]}" alt="Work">
+                    <button type="button" class="delete-btn" onclick="removeAwPortfolioImage(${i})"><i class="fa-solid fa-xmark" style="color:white; font-size:12px;"></i></button>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="portfolio-slot" onclick="document.getElementById('awPortfolioInput_${i}').click()">
+                    <i class="fa-solid fa-plus"></i>
+                    <input type="file" id="awPortfolioInput_${i}" style="display:none;" accept="image/*" onchange="handleAwPortfolioUpload(event)">
+                </div>
+            `;
+        }
+    }
+    grid.innerHTML = html;
+    document.getElementById('awPortfolio').value = currentAwPortfolioUrls.join(',');
+}
+
+async function handleAwPortfolioUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        const url = await uploadFileToBackend(file);
+        currentAwPortfolioUrls.push(url);
+        renderAwPortfolioGrid(currentAwPortfolioUrls.join(','));
+    } catch(err) {
+        showToast(err.message, 'error');
+    }
+}
+
+function removeAwPortfolioImage(index) {
+    currentAwPortfolioUrls.splice(index, 1);
+    renderAwPortfolioGrid(currentAwPortfolioUrls.join(','));
+}
 
 if (currentUser.role === 'agency') {
     document.getElementById('tab-workers').style.display = 'flex';
@@ -417,6 +463,7 @@ async function loadAgencyWorkers() {
 function showAddWorkerForm() {
     document.getElementById('addWorkerForm').reset();
     document.getElementById('awId').value = '';
+    renderAwPortfolioGrid('');
     document.getElementById('addWorkerFormContainer').style.display = 'block';
     document.getElementById('addWorkerFormContainer').scrollIntoView({behavior: 'smooth'});
 }
@@ -440,7 +487,7 @@ function editAgencyWorker(id) {
     document.getElementById('awWage').value = worker.expected_wage || 1;
     document.getElementById('awExperience').value = worker.experience_years || 0;
     document.getElementById('awBio').value = worker.bio || '';
-    document.getElementById('awPortfolio').value = worker.portfolio_urls || '';
+    renderAwPortfolioGrid(worker.portfolio_urls || '');
     
     document.getElementById('addWorkerFormContainer').style.display = 'block';
     document.getElementById('addWorkerFormContainer').scrollIntoView({behavior: 'smooth'});
