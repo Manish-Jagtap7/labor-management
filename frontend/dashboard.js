@@ -74,9 +74,18 @@ async function loadChats() {
         container.innerHTML = requests.map(req => {
             const customerName = req.customer ? (req.customer.full_name || req.customer.email) : 'Unknown';
             const providerName = req.provider ? (req.provider.full_name || req.provider.email) : 'Unknown';
+            
+            let workerDisplayName = providerName;
+            if (req.profile && req.profile.full_name) {
+                workerDisplayName = req.profile.full_name;
+                if (req.provider && req.provider.role === 'agency') {
+                    workerDisplayName += ` <small style="color:var(--primary); font-weight:normal;">(Agency: ${providerName})</small>`;
+                }
+            }
+            
             let roleDetails = (role === 'provider' || role === 'agency') 
                 ? `<strong>Customer:</strong> ${customerName}<br><strong>Date Needed:</strong> ${req.date_needed}` 
-                : `<strong>Worker:</strong> ${providerName}<br><strong>Job:</strong> ${req.job_description}`;
+                : `<strong>Worker:</strong> ${workerDisplayName}<br><strong>Job:</strong> ${req.job_description}`;
                 
             if (role === 'agency' && req.profile_id) {
                 const w = currentAgencyWorkers.find(x => x.id === req.profile_id);

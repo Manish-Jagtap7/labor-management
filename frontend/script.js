@@ -337,7 +337,9 @@ async function fetchActiveRequests() {
         if (role === 'customer') {
             requests.forEach(r => {
                 if(r.status === 'pending' || r.status === 'accepted') {
-                    userActiveRequests[r.provider_id] = r;
+                    // Use profile_id if available, otherwise provider_id
+                    const key = r.profile_id ? r.profile_id : r.provider_id;
+                    userActiveRequests[key] = r;
                 }
             });
         }

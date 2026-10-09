@@ -28,3 +28,4 @@ class HiringRequest(Base):
     # Relationships
     customer = relationship("User", foreign_keys=[customer_id], backref="outgoing_requests")
     provider = relationship("User", foreign_keys=[provider_id], backref="incoming_requests")
+    profile = relationship("ProviderProfile", foreign_keys=[profile_id], backref="hiring_requests")

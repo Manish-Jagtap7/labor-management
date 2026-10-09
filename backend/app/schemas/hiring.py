@@ -17,6 +17,8 @@ class HiringRequestCreate(HiringRequestBase):
 class HiringRequestStatusUpdate(BaseModel):
     status: RequestStatus
 
+from app.schemas.profile import ProviderProfileResponse
+
 class HiringRequestResponse(HiringRequestBase):
     id: int
     customer_id: int
@@ -24,6 +26,7 @@ class HiringRequestResponse(HiringRequestBase):
     created_at: datetime
     customer: Optional['UserResponse'] = None
     provider: Optional['UserResponse'] = None
+    profile: Optional['ProviderProfileResponse'] = None
 
     class Config:
         from_attributes = True
