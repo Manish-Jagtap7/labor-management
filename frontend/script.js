@@ -288,7 +288,7 @@ async function fetchActiveRequests() {
     if(!authToken || !currentUser) return;
     try {
         const role = currentUser.role;
-        const endpoint = role === 'provider' ? '/hiring/provider/incoming-requests' : '/hiring/customer/my-requests';
+        const endpoint = (role === 'provider' || role === 'agency') ? '/hiring/provider/incoming-requests' : '/hiring/customer/my-requests';
         const res = await fetch(`${API_BASE}${endpoint}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
