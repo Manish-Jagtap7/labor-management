@@ -197,7 +197,11 @@ async function handleRegister(e) {
         localStorage.setItem('user_name_' + email, fullName);
         localStorage.setItem('user_role', role);
 
-        saveAuth(loginData.access_token, { email, full_name: fullName, role });
+        // Temporarily set auth state to allow profile creation API calls
+        authToken = loginData.access_token;
+        currentUser = { email, full_name: fullName, role };
+        localStorage.setItem('token', authToken);
+        localStorage.setItem('user', JSON.stringify(currentUser));
 
         // 3. If provider, create their profile
         if (role === 'provider') {
@@ -228,20 +232,19 @@ async function handleRegister(e) {
                 is_available: true,
                 image_url: imageUrl
             }, true);
-
-            showToast('Worker profile created! You are now visible to customers.', 'success');
         } else {
             // Create customer profile
             await apiPost('/profiles/customer', {
                 company_name: fullName,
                 location: ''
             }, true);
-            showToast('Account created! Start searching for workers.', 'success');
         }
 
         closeAllModals();
-        // Refresh worker listings if a new provider was added
-        if (role === 'provider') searchWorkers();
+        
+        sessionStorage.setItem('pendingToast', role === 'provider' ? 'Worker profile created! You are now visible.' : 'Account created! Start searching.');
+        sessionStorage.setItem('pendingToastType', 'success');
+        window.location.reload();
 
     } catch (err) {
         errEl.textContent = err.message;

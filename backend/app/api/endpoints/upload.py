@@ -31,5 +31,5 @@ async def upload_file(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
-    # Return the URL path
-    return {"url": f"http://localhost:8000/uploads/{unique_filename}"}
+    # Return the URL path as a relative URL
+    return {"url": f"/uploads/{unique_filename}"}
