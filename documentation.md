@@ -42,35 +42,31 @@ To build this, we used modern, fast, and scalable technologies. Here is the list
 
 ## 4. The Workflow: How It Actually Works Behind the Scenes
 
-Let's walk through a common scenario to see how all these pieces work together.
+This platform serves three distinct types of users. Let's walk through how each user interacts with the system and what happens in the code.
 
-### Step 1: User Registration
-1. A user clicks "Sign Up" and fills out their details on the frontend.
-2. The frontend (JavaScript) bundles this data and sends it over the internet to the Backend (`/auth/register` API endpoint).
-3. The Backend receives the data, uses **Passlib** to encrypt the password (so even we can't read it), and uses **SQLAlchemy** to save the user into the **SQLite** database.
+### Workflow 1: The Customer's Journey (Hiring Someone)
+1. **Searching for Workers:** The customer goes to the main page and types "Mumbai" in the location filter.
+   - *Behind the Scenes:* The frontend asks the Backend (`/search/providers?location=Mumbai`) for a list of workers. The Backend searches the database for all workers in Mumbai and sends back a list of their names, wages, and photos. The frontend dynamically creates HTML "Worker Cards" and displays them.
+2. **Sending a Hiring Request:** The customer clicks "Request to Hire" on a worker's card, fills out the date and job description, and hits send.
+   - *Behind the Scenes:* The frontend sends this request to the Backend (`/hiring/request`). The Backend saves a new "Hiring Request" into the database with a status of `pending`.
+3. **Chatting:** Once the worker accepts, the customer clicks "Start Chat" and sends a message.
+   - *Behind the Scenes:* The frontend opens a **WebSocket** connection to the Backend. When the customer types a message, it travels through the open WebSocket to the Backend, which saves it in the database and instantly pushes it to the worker's screen.
 
-### Step 2: Logging In
-1. The user types their email and password and clicks Log In.
-2. The frontend sends this to the Backend. The Backend checks the database. If the encrypted passwords match, the Backend uses **PyJWT** to create a "Token" (a secret, temporary digital key).
-3. The frontend receives this Token and saves it in the browser's memory (`localStorage`). From now on, whenever the frontend asks the backend for private data (like reading private chats), it shows this Token to prove who it is.
+### Workflow 2: The Individual Worker's Journey (Getting Hired)
+1. **Registration & Profile Creation:** An individual worker signs up, selecting the "Individual Worker" role, and fills out their skills, location, and wage.
+   - *Behind the Scenes:* The frontend bundles this data and sends it to the Backend (`/auth/register`). The Backend saves the user and automatically creates a corresponding "Provider Profile" in the database linked to that user.
+2. **Updating the Portfolio:** The worker logs in, goes to their Dashboard, adds a "Bio", and uploads photos of their past work (e.g., a painted wall).
+   - *Behind the Scenes:* The frontend sends the image files to the Backend (`/upload/image`). The Backend saves the files securely on the server's hard drive and saves the file URLs to the worker's profile in the database.
+3. **Accepting Jobs:** The worker checks their Dashboard and sees a new `pending` hiring request from a customer. They click "Accept".
+   - *Behind the Scenes:* The frontend tells the Backend to update the request (`/hiring/request/{id}/status`). The Backend changes the database status to `accepted` and unlocks a unique Chat Room ID so the worker and customer can talk.
 
-### Step 3: Searching and Viewing Workers
-1. The customer goes to the main page and types "Mumbai" in the location filter.
-2. The frontend asks the Backend (`/search/providers?location=Mumbai`) for a list of workers.
-3. The Backend searches the database for all workers in Mumbai and sends back a list of their names, wages, and photos.
-4. The frontend JavaScript receives this list and dynamically creates HTML "Worker Cards" and displays them on the screen.
-
-### Step 4: Sending a Hiring Request
-1. The customer clicks "Request to Hire" on a worker's card, fills out the date and job description, and hits send.
-2. The frontend sends this request to the Backend (`/hiring/request`).
-3. The Backend saves a new "Hiring Request" into the database with a status of `pending`.
-
-### Step 5: Accepting and Chatting (WebSockets)
-1. The Worker logs in, goes to their Dashboard, and sees the pending request. They click "Accept".
-2. The Backend updates the database status to `accepted` and generates a unique Chat Room ID.
-3. When both users click "Start Chat", they are taken to the Chat Page.
-4. The frontend opens a **WebSocket** connection to the Backend. Unlike a normal web request that closes immediately, a WebSocket stays open. 
-5. When the customer types "Hello, come tomorrow at 9 AM" and hits send, the message travels through the open WebSocket to the Backend. The Backend saves the message in the database and instantly pushes it through the WebSocket directly to the Worker's screen. No page refresh needed!
+### Workflow 3: The Labour Agency's Journey (Managing Multiple Workers)
+1. **Agency Registration:** A contractor signs up as an "Agency" so they can list all the laborers who work under them.
+   - *Behind the Scenes:* Just like individual workers, the Backend creates the user, but marks their role strictly as `agency`. 
+2. **Adding Agency Workers:** The agency goes to their Dashboard and clicks "Add New Worker". They fill out a form for *Worker A* (e.g., Gaurav, a Mason) and upload his photos.
+   - *Behind the Scenes:* Instead of updating their own profile, the frontend sends a request to a special endpoint (`/profiles/provider/agency/worker`). The Backend creates a *brand new* "Provider Profile" in the database, but instead of linking it to a new User, it links it directly to the Agency's ID. This allows one agency to own unlimited worker profiles.
+3. **Managing Incoming Requests:** A customer sees *Worker A* on the main page and sends a hiring request. 
+   - *Behind the Scenes:* The Backend realizes *Worker A* is managed by an agency. It links the hiring request to both *Worker A*'s specific profile ID and the *Agency*'s user ID. When the Agency logs into their dashboard, they see the request labeled specifically for *Worker A*, allowing the contractor to negotiate on behalf of their worker via the WebSocket chat.
 
 ---
 
