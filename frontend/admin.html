@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - LabourGram</title>
+    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="theme.js"></script>
+</head>
+<body class="admin-layout">
+    <div class="chai-backdrop"></div>
+
+    <!-- Admin Navigation -->
+    <header class="admin-nav">
+        <a href="admin.html" class="admin-brand">
+            <div class="logo">Labour<span>Gram</span></div>
+            <span class="badge-admin"><i class="fa-solid fa-shield-halved"></i> Admin portal</span>
+        </a>
+
+        <div class="admin-nav-actions">
+            <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle theme">
+                <i class="fa-regular fa-sun"></i>
+            </button>
+            <a href="index.html" class="btn btn-secondary btn-sm" title="View public marketplace">
+                <i class="fa-solid fa-house"></i> Public site
+            </a>
+            <div class="badge" style="border:1px solid var(--border); font-size:0.75rem;">
+                <i class="fa-solid fa-user-shield"></i>
+                <span id="adminNameDisplay">Admin</span>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="logoutAdmin()" title="Sign out" style="color:var(--status-danger);">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </header>
+
+    <main class="admin-container">
+
+        <!-- Top Platform Stats -->
+        <section class="stats-grid">
+            <div class="card-chai stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">Pending review</span>
+                    <span class="status-tag pending"><i class="fa-solid fa-hourglass-half"></i> Action needed</span>
+                </div>
+                <div class="stat-card-value" id="statPendingCount">0</div>
+                <div class="stat-card-sub">Profiles waiting for approval</div>
+            </div>
+
+            <div class="card-chai stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">Approved workers</span>
+                    <span class="status-tag approved"><i class="fa-solid fa-user-check"></i> Live</span>
+                </div>
+                <div class="stat-card-value" id="statApprovedCount">0</div>
+                <div class="stat-card-sub" id="statTotalLaboursSub">0 registered workers</div>
+            </div>
+
+            <div class="card-chai stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">Customers</span>
+                    <i class="fa-solid fa-briefcase" style="color:var(--muted-foreground); font-size:0.9rem;"></i>
+                </div>
+                <div class="stat-card-value" id="statCustomerCount">0</div>
+                <div class="stat-card-sub">Registered hiring clients</div>
+            </div>
+
+            <div class="card-chai stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">Platform users</span>
+                    <i class="fa-solid fa-users" style="color:var(--muted-foreground); font-size:0.9rem;"></i>
+                </div>
+                <div class="stat-card-value" id="statTotalUsers">0</div>
+                <div class="stat-card-sub">Across all accounts</div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs (Segmented Control) -->
+        <div style="margin-bottom: 1.75rem;">
+            <div class="segmented-control" role="tablist">
+                <button type="button" class="segmented-tab active" onclick="switchAdminTab('pending')" id="tabBtnPending">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Pending review</span>
+                    <span class="badge" id="tabCounterPending" style="font-size:0.7rem; padding:0.1rem 0.4rem; background:rgba(0,0,0,0.15);">0</span>
+                </button>
+                <button type="button" class="segmented-tab" onclick="switchAdminTab('labours')" id="tabBtnLabours">
+                    <i class="fa-solid fa-people-carry-box"></i>
+                    <span>All workers</span>
+                    <span class="badge" id="tabCounterLabours" style="font-size:0.7rem; padding:0.1rem 0.4rem; background:rgba(0,0,0,0.15);">0</span>
+                </button>
+                <button type="button" class="segmented-tab" onclick="switchAdminTab('customers')" id="tabBtnCustomers">
+                    <i class="fa-solid fa-building-user"></i>
+                    <span>Customers</span>
+                    <span class="badge" id="tabCounterCustomers" style="font-size:0.7rem; padding:0.1rem 0.4rem; background:rgba(0,0,0,0.15);">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 1: PENDING LABOUR APPROVALS -->
+        <section id="sec-pending" class="admin-section active" style="display:block;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <div>
+                    <h2 style="font-family:var(--font-display); font-size:1.35rem; font-weight:600;">Profiles awaiting review</h2>
+                    <p style="color:var(--muted-foreground); font-size:0.85rem;">Inspect uploaded Aadhaar card, PAN card, and work history before approving.</p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="loadAdminData()">
+                    <i class="fa-solid fa-rotate-right"></i> Refresh
+                </button>
+            </div>
+
+            <div id="pendingLaboursList" class="labour-review-grid">
+                <!-- Rendered dynamically by admin.js -->
+            </div>
+        </section>
+
+        <!-- TAB 2: ALL LABOURS DIRECTORY -->
+        <section id="sec-labours" class="admin-section" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.75rem;">
+                <div>
+                    <h2 style="font-family:var(--font-display); font-size:1.35rem; font-weight:600;">Worker directory</h2>
+                    <p style="color:var(--muted-foreground); font-size:0.85rem;">Complete registry of all worker profiles across statuses.</p>
+                </div>
+                <div class="filter-controls">
+                    <input type="text" id="labourSearchInput" class="admin-search-input" placeholder="Search by name, trade, location..." oninput="filterLabourDirectory()">
+                    <select id="labourStatusFilter" class="admin-select" onchange="filterLabourDirectory()">
+                        <option value="all">All statuses</option>
+                        <option value="approved">Approved only</option>
+                        <option value="pending">Pending only</option>
+                        <option value="rejected">Rejected only</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="table-chai">
+                    <thead>
+                        <tr>
+                            <th>Labour</th>
+                            <th>Trade & skills</th>
+                            <th>Location</th>
+                            <th>Wage / Exp</th>
+                            <th>Status</th>
+                            <th>KYC documents</th>
+                            <th>Portfolio</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allLaboursTableBody">
+                        <!-- Rendered dynamically by admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB 3: CUSTOMERS DIRECTORY -->
+        <section id="sec-customers" class="admin-section" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.75rem;">
+                <div>
+                    <h2 style="font-family:var(--font-display); font-size:1.35rem; font-weight:600;">Registered customers</h2>
+                    <p style="color:var(--muted-foreground); font-size:0.85rem;">Directory of individuals and businesses hiring through the platform.</p>
+                </div>
+                <div class="filter-controls">
+                    <input type="text" id="customerSearchInput" class="admin-search-input" placeholder="Search customers..." oninput="filterCustomerDirectory()">
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="table-chai">
+                    <thead>
+                        <tr>
+                            <th>Customer name / email</th>
+                            <th>Company</th>
+                            <th>Contact phone</th>
+                            <th>Location</th>
+                            <th>Account status</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customersTableBody">
+                        <!-- Rendered dynamically by admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- REJECTION MODAL -->
+    <div class="modal-overlay" id="rejectionModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--status-danger);"></i> Reject labour profile</h3>
+                <button type="button" class="modal-close-btn" onclick="closeRejectionModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="modal-subtitle">
+                Specify constructive feedback. This will appear in the worker dashboard so they can upload clear files and re-apply:
+            </p>
+
+            <div class="preset-reasons">
+                <button type="button" class="preset-btn" onclick="setPresetReason('Aadhaar Card is blurry or unreadable. Please upload a clear photo of your Aadhaar Card.')">Aadhaar unclear</button>
+                <button type="button" class="preset-btn" onclick="setPresetReason('PAN Card is blurry or invalid. Please upload a clear photo of your PAN Card.')">PAN card unclear</button>
+                <button type="button" class="preset-btn" onclick="setPresetReason('Uploaded Aadhaar or PAN card does not match the registration name or details.')">ID mismatch</button>
+                <button type="button" class="preset-btn" onclick="setPresetReason('Please upload clear, authentic photos of your actual work portfolio.')">Work photo clarity</button>
+                <button type="button" class="preset-btn" onclick="setPresetReason('Please specify a valid street or area location in your selected city.')">Location invalid</button>
+            </div>
+
+            <div class="form-group">
+                <textarea id="rejectionReasonInput" class="admin-textarea" placeholder="Enter detailed feedback for the worker..."></textarea>
+            </div>
+            <input type="hidden" id="rejectProfileId">
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeRejectionModal()">Cancel</button>
+                <button type="button" class="btn btn-asym" id="confirmRejectBtn" onclick="submitRejection()" style="border-color:var(--status-danger); color:var(--status-danger);">
+                    Confirm rejection
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN PORTFOLIO LIGHTBOX -->
+    <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+        <button type="button" class="lightbox-close" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+        <img id="lightboxImage" src="" alt="Document or portfolio preview" onclick="event.stopPropagation()">
+    </div>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div class="toast" id="toast"></div>
+
+    <script src="admin.js?v=20"></script>
+</body>
+</html>
