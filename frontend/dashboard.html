@@ -1,232 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dashboard - LabourGram</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=5">
-    <style>
-        body { background: var(--bg); display: flex; flex-direction: column; min-height: 100vh; margin: 0; }
-        
-        .dash-nav {
-            background: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10;
-        }
-        .dash-nav h2 { margin: 0; color: var(--primary); font-size: 1.5rem; transition: color 0.2s; }
-        .dash-nav h2:hover { color: var(--secondary); }
-        
-        .dash-container {
-            display: flex; flex: 1; overflow: hidden;
-        }
-        
-        .dash-sidebar {
-            width: 250px; background: white; border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; padding: 1rem 0;
-        }
-        .dash-tab {
-            padding: 1rem 2rem; cursor: pointer; color: var(--text-light); font-weight: 500;
-            display: flex; align-items: center; gap: 0.75rem; border-left: 4px solid transparent;
-            transition: all 0.2s;
-        }
-        .dash-tab:hover { background: #f8fafc; }
-        .dash-tab.active { background: #f1f5f9; color: var(--primary); border-left-color: var(--primary); }
-        
-        .dash-main {
-            flex: 1; padding: 2rem; overflow-y: auto; background: var(--bg);
-        }
-        
-        .dash-section { display: none; }
-        .dash-section.active { display: block; }
-        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        
-        .chat-list-card {
-            background: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
-        }
-        .chat-list-details h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; }
-        .chat-list-details p { margin: 0; color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.25rem;}
-        
-        @media (max-width: 768px) {
-            .dash-container { flex-direction: column; }
-            .dash-nav { padding: 1rem; flex-direction: column; gap: 0.5rem; text-align: center; }
-            .dash-sidebar { 
-                width: 100%; border-right: none; border-bottom: 1px solid var(--border); 
-                flex-direction: row; justify-content: space-around; padding: 0; 
-                background: white; position: sticky; top: 0; z-index: 100;
-            }
-            .dash-tab { 
-                border-left: none; border-bottom: 3px solid transparent; 
-                padding: 0.75rem 0.25rem; justify-content: center; flex: 1; 
-                font-size: 0.75rem; flex-direction: column; gap: 0.25rem; text-align: center;
-            }
-            .dash-tab i { font-size: 1.25rem; margin-right: 0; }
-            .dash-tab.active { border-left-color: transparent; border-bottom-color: var(--primary); }
-            .form-grid { grid-template-columns: 1fr; }
-            .dash-main { padding: 1rem 0.5rem; }
-            .chat-list-card { flex-direction: column; align-items: flex-start; padding: 1rem; }
-            .chat-list-card .request-actions { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
-            .chat-list-card .request-actions button { flex: 1; width: 100%; }
-            .card { padding: 1rem; }
-            .portfolio-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-        }
-        
-        /* Upload UI */
-        .pfp-upload-container {
-            display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;
-        }
-        .pfp-circle {
-            width: 120px; height: 120px; border-radius: 50%; background: #e2e8f0; display: flex;
-            justify-content: center; align-items: center; overflow: hidden; cursor: pointer;
-            position: relative; border: 2px solid var(--border); transition: all 0.2s;
-        }
-        .pfp-circle:hover { border-color: var(--primary); }
-        .pfp-circle img { width: 100%; height: 100%; object-fit: cover; }
-        .pfp-circle i { font-size: 2rem; color: var(--text-light); }
-        .pfp-overlay {
-            position: absolute; bottom: 0; width: 100%; height: 30%; background: rgba(0,0,0,0.5);
-            display: flex; justify-content: center; align-items: center; color: white;
-            font-size: 0.8rem; opacity: 0; transition: opacity 0.2s;
-        }
-        .pfp-circle:hover .pfp-overlay { opacity: 1; }
-
-        .portfolio-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem;
-        }
-        .portfolio-slot {
-            width: 100%; aspect-ratio: 1; background: #e2e8f0; border-radius: 0.5rem;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            position: relative; overflow: hidden; border: 2px dashed var(--border); transition: all 0.2s;
-        }
-        .portfolio-slot:hover { border-color: var(--primary); color: var(--primary); }
-        .portfolio-slot img { width: 100%; height: 100%; object-fit: cover; }
-        .portfolio-slot i { font-size: 1.5rem; color: var(--text-light); }
-        .portfolio-slot:hover i { color: var(--primary); }
-        
-        .delete-btn {
-            position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.9);
-            color: white; border: none; border-radius: 50%; width: 24px; height: 24px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 0.7rem;
-        }
-    </style>
+    <title>Dashboard - LabourGram</title>
+    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="theme.js"></script>
 </head>
-<body>
-    <nav class="dash-nav">
-        <h2 onclick="window.location.href='index.html'" style="cursor:pointer;"><i class="fa-solid fa-arrow-left" style="margin-right:10px;"></i> Dashboard</h2>
-        <div class="user-info" id="dashUserInfo" style="font-weight: 500; color: var(--text);"></div>
-    </nav>
+<body class="dash-layout">
+    <div class="chai-backdrop"></div>
+
+    <!-- Dashboard Top Bar -->
+    <header class="dash-header-bar">
+        <a href="index.html" class="dash-back-link">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Labour<strong>Gram</strong></span>
+        </a>
+
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle theme">
+                <i class="fa-regular fa-sun"></i>
+            </button>
+            <div id="dashUserInfo" style="font-size:0.85rem; color:var(--muted-foreground);"></div>
+            <button type="button" id="dashAdminBtn" class="btn btn-secondary btn-sm" style="display:none;" onclick="window.location.href='admin.html'">
+                <i class="fa-solid fa-shield-halved"></i> Admin panel
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="logoutUser()" title="Logout" style="color:var(--status-danger);">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </header>
     
     <div class="dash-container">
+        <!-- Sidebar Navigation -->
         <aside class="dash-sidebar">
-            <div class="dash-tab active" onclick="switchTab('chats')" id="tab-chats"><i class="fa-regular fa-message"></i> Chats & Requests <span class="badge hidden" id="dashBadge">0</span></div>
-            <div class="dash-tab" onclick="switchTab('profile')" id="tab-profile"><i class="fa-regular fa-user"></i> My Profile</div>
-            <div class="dash-tab" onclick="switchTab('workers')" id="tab-workers" style="display:none;"><i class="fa-solid fa-users"></i> My Workers</div>
+            <button type="button" class="dash-tab-btn active" onclick="switchTab('chats')" id="tab-chats">
+                <i class="fa-regular fa-message"></i>
+                <span>Chats & requests</span>
+                <span class="dash-badge hidden" id="dashBadge">0</span>
+            </button>
+            <button type="button" class="dash-tab-btn" onclick="switchTab('profile')" id="tab-profile">
+                <i class="fa-regular fa-user"></i>
+                <span>My profile</span>
+            </button>
         </aside>
         
+        <!-- Main Content Pane -->
         <main class="dash-main">
+            <!-- Dynamic Profile Approval Status Banner -->
+            <div id="profileApprovalBanner"></div>
+
             <!-- CHATS SECTION -->
-            <section id="sec-chats" class="dash-section active">
-                <h3 style="margin-top:0; margin-bottom:1.5rem;"><i class="fa-regular fa-message"></i> Your Chats</h3>
+            <section id="sec-chats" class="dash-section-pane active">
+                <div style="margin-bottom:1.25rem;">
+                    <h2 style="font-family:var(--font-display); font-size:1.35rem; font-weight:600;">Active requests & chats</h2>
+                    <p style="color:var(--muted-foreground); font-size:0.85rem;">Manage incoming job requests, coordinate work dates, and chat directly.</p>
+                </div>
                 <div id="chatsListContainer">
-                    <p style="color:var(--text-light);">Loading...</p>
+                    <p style="color:var(--muted-foreground); text-align:center; padding:2rem;">Loading requests...</p>
                 </div>
             </section>
             
             <!-- PROFILE SECTION -->
-            <section id="sec-profile" class="dash-section">
-                <h3 style="margin-top:0; margin-bottom:1.5rem;"><i class="fa-regular fa-user"></i> Profile Details</h3>
-                <div class="card" style="max-width: 600px;">
+            <section id="sec-profile" class="dash-section-pane">
+                <div style="margin-bottom:1.25rem;">
+                    <h2 style="font-family:var(--font-display); font-size:1.35rem; font-weight:600;">Profile details</h2>
+                    <p style="color:var(--muted-foreground); font-size:0.85rem;">Keep your trade skills, location, wage rates, and identity documents current.</p>
+                </div>
+
+                <div class="card-chai" style="max-width: 650px; padding: 1.75rem; border-radius: var(--radius-xl);">
                     <div class="pfp-upload-container">
-                        <div class="pfp-circle" onclick="document.getElementById('pfpInput').click()">
-                            <img id="pfpPreview" src="" style="display:none;">
+                        <div class="pfp-circle" onclick="document.getElementById('pfpInput').click()" title="Click to upload profile photo">
+                            <img id="pfpPreview" src="" style="display:none;" alt="Profile photo preview">
                             <i id="pfpPlaceholder" class="fa-solid fa-camera"></i>
                             <div class="pfp-overlay">Upload</div>
                         </div>
-                        <input type="file" id="pfpInput" style="display:none;" accept="image/*" onchange="handlePfpUpload(event)">
-                        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-light);">Profile Picture</p>
+                        <input type="file" id="pfpInput" style="display:none;" accept="image/png, image/jpeg, image/webp" onchange="handlePfpUpload(event)">
+                        <span style="margin-top:0.5rem; font-size:0.8rem; color:var(--muted-foreground);">Profile photo</span>
                     </div>
 
                     <form id="profileForm" onsubmit="updateProfile(event)">
-                        <div id="profileFormFields"></div>
-                        <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; width:100%;">Update Profile</button>
+                        <div id="profileFormFields">
+                            <!-- Filled dynamically by dashboard.js -->
+                        </div>
+                        <button type="submit" id="profSubmitBtn" class="btn btn-asym btn-full" style="margin-top: 1.5rem;">
+                            Update profile
+                        </button>
                     </form>
-                </div>
-            </section>
-
-            <!-- AGENCY WORKERS SECTION -->
-            <section id="sec-workers" class="dash-section">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                    <h3 style="margin:0;"><i class="fa-solid fa-users"></i> Managed Workers</h3>
-                    <button class="btn btn-primary" onclick="showAddWorkerForm()"><i class="fa-solid fa-plus"></i> Add New Worker</button>
-                </div>
-                <div id="addWorkerFormContainer" style="display:none; background:white; padding:1.5rem; border-radius:1rem; border:1px solid var(--border); margin-bottom:1.5rem;">
-                    <h4 style="margin-top:0;">Add New Worker Profile</h4>
-                    <form id="addWorkerForm" onsubmit="handleAddWorker(event)">
-                        <input type="hidden" id="awId">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Full Name</label>
-                                <input type="text" id="awName" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Industry</label>
-                                <select id="awIndustry" required>
-                                    <option value="Construction">Construction</option>
-                                    <option value="Agriculture">Agriculture</option>
-                                    <option value="Electrical">Electrical</option>
-                                    <option value="Cleaning">Cleaning</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Skills (comma separated)</label>
-                                <input type="text" id="awSkills" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Location</label>
-                                <input type="text" id="awLocation" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Expected Wage (₹)</label>
-                                <input type="number" id="awWage" required min="1">
-                            </div>
-                            <div class="form-group">
-                                <label>Experience (Years)</label>
-                                <input type="number" id="awExperience" required min="0">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label>Bio (Optional)</label>
-                            <textarea id="awBio" rows="3" placeholder="Tell us about the worker's experience..."></textarea>
-                        </div>
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label>Portfolio Images (Up to 5)</label>
-                            <div class="portfolio-grid" id="awPortfolioGrid">
-                                <!-- Filled dynamically -->
-                            </div>
-                            <small style="color:var(--text-light);">Click a slot to upload a photo.</small>
-                            <input type="hidden" id="awPortfolio" value="">
-                        </div>
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label>Profile Picture</label>
-                            <input type="file" id="awImage" accept="image/*">
-                        </div>
-                        <div style="display:flex; gap:1rem; margin-top:1.5rem;">
-                            <button type="submit" class="btn btn-primary" id="awSubmitBtn">Save Worker</button>
-                            <button type="button" class="btn btn-secondary" onclick="hideAddWorkerForm()">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-                <div id="agencyWorkersListContainer">
-                    <p style="color:var(--text-light);">Loading workers...</p>
                 </div>
             </section>
         </main>
     </div>
 
+    <!-- Fullscreen Lightbox Modal -->
+    <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+        <button type="button" class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        <img id="lightboxImg" src="" alt="Document preview" onclick="event.stopPropagation()">
+    </div>
+
     <div class="toast" id="toast"></div>
-    <script src="dashboard.js?v=5"></script>
+    <script src="address-autocomplete.js?v=20"></script>
+    <script src="dashboard.js?v=20"></script>
 </body>
 </html>

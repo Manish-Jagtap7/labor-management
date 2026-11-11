@@ -37,12 +37,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+function formatImageUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url;
+    const backendOrigin = (typeof API_BASE !== 'undefined' ? API_BASE : 'http://localhost:8000/api/v1').replace(/\/api\/v1\/?$/, '');
+    if (url.includes(':5500/uploads/')) {
+        return url.replace(/http:\/\/[^/]+:5500/, backendOrigin);
+    }
+    if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+        return `${backendOrigin}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    return `${backendOrigin}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 function renderWorkerProfile(worker) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('profileContent').style.display = 'block';
 
     const workerName = (worker.user && worker.user.full_name) ? worker.user.full_name : (worker.full_name || worker.skills.split(',')[0].trim() + ' Worker');
-    const image = worker.image_url || `https://source.unsplash.com/150x150/?${worker.industry},worker`;
+    const image = worker.image_url ? formatImageUrl(worker.image_url) : `https://source.unsplash.com/150x150/?${worker.industry},worker`;
 
     document.getElementById('wpImage').src = image;
     document.getElementById('wpName').textContent = workerName;
@@ -51,20 +67,19 @@ function renderWorkerProfile(worker) {
     document.getElementById('wpIndustry').textContent = worker.industry;
     document.getElementById('wpExp').textContent = `${worker.experience_years} yrs exp`;
     document.getElementById('wpLoc').textContent = worker.location;
+    const mapLink = document.getElementById('wpMapLink');
+    if (mapLink) {
+        mapLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(worker.location)}`;
+    }
     document.getElementById('wpWage').textContent = worker.expected_wage;
 
     const statusBadge = document.getElementById('wpStatus');
-    if (worker.is_available) {
-        statusBadge.textContent = 'Available Now';
-        statusBadge.style.background = '#dcfce7';
-        statusBadge.style.color = '#16a34a';
-    } else {
-        statusBadge.textContent = 'Busy / Unavailable';
-        statusBadge.style.background = '#fef3c7';
-        statusBadge.style.color = '#d97706';
-    }
+    statusBadge.className = `status-tag ${worker.is_available ? 'approved' : 'busy'}`;
+    statusBadge.textContent = worker.is_available ? 'Available' : 'Busy';
+    statusBadge.style.background = '';
+    statusBadge.style.color = '';
 
-    document.getElementById('wpBio').textContent = worker.bio || "This worker hasn't added a bio yet.";
+    document.getElementById('wpBio').textContent = worker.bio || "No biographical information provided yet.";
 
     const portfolioContainer = document.getElementById('wpPortfolio');
     const portfolioSection = document.getElementById('portfolioSection');
@@ -72,9 +87,14 @@ function renderWorkerProfile(worker) {
     if (worker.portfolio_urls) {
         const urls = worker.portfolio_urls.split(',').map(u => u.trim()).filter(u => u.length > 0);
         if (urls.length > 0) {
-            portfolioContainer.innerHTML = urls.map(u => 
-                `<img src="${u}" class="portfolio-item" onclick="openFullscreen('${u}')" onerror="this.style.display='none'">`
-            ).join('');
+            portfolioContainer.innerHTML = urls.map(u => {
+                const fullUrl = formatImageUrl(u);
+                return `
+                    <div class="portfolio-slot" onclick="openFullscreen('${fullUrl}')" title="Click to view full size">
+                        <img src="${fullUrl}" alt="Work portfolio sample" onerror="this.parentElement.style.display='none'">
+                    </div>
+                `;
+            }).join('');
             portfolioSection.style.display = 'block';
         }
     }

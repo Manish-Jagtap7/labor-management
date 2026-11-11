@@ -1,7 +1,23 @@
 // ================================
 // API CONFIGURATION
 // ================================
-const API_BASE = '/api/v1';
+const API_BASE = 'http://localhost:8000/api/v1';
+
+function formatImageUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url;
+    const backendOrigin = API_BASE.replace(/\/api\/v1\/?$/, '');
+    if (url.includes(':5500/uploads/')) {
+        return url.replace(/http:\/\/[^/]+:5500/, backendOrigin);
+    }
+    if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+        return `${backendOrigin}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    return `${backendOrigin}${url.startsWith('/') ? '' : '/'}${url}`;
+}
 
 // ================================
 // AUTH STATE MANAGEMENT
@@ -46,7 +62,24 @@ function updateUIForLoggedInUser() {
     
     if (authBtn) authBtn.style.display = 'none';
     if (userMenu) userMenu.style.display = 'flex';
-    if (greeting) greeting.textContent = `Hi, ${currentUser.full_name || currentUser.email}`;
+    if (greeting) {
+        if (currentUser.role === 'admin') {
+            greeting.innerHTML = `<span class="badge" style="border: 1px solid var(--border); font-size:0.72rem; margin-right:0.35rem;"><i class="fa-solid fa-shield-halved"></i> Admin</span> Hi, ${currentUser.full_name || currentUser.email.split('@')[0]}`;
+        } else {
+            greeting.textContent = `Hi, ${currentUser.full_name || currentUser.email.split('@')[0]}`;
+        }
+    }
+
+    // If admin, show Admin Panel button in navbar
+    if (currentUser.role === 'admin' && userMenu && !document.getElementById('navAdminBtn')) {
+        const adminBtn = document.createElement('button');
+        adminBtn.id = 'navAdminBtn';
+        adminBtn.className = 'btn btn-secondary btn-sm';
+        adminBtn.style.marginRight = '0.5rem';
+        adminBtn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Admin panel';
+        adminBtn.onclick = () => window.location.href = 'admin.html';
+        userMenu.insertBefore(adminBtn, userMenu.firstChild.nextSibling);
+    }
 }
 
 // ================================
@@ -155,9 +188,19 @@ async function handleLogin(e) {
         
         // Save correct role for UI logic
         localStorage.setItem('user_role', user.role);
-
-        saveAuth(data.access_token, user);
+        authToken = data.access_token;
+        currentUser = user;
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(user));
         closeAllModals();
+
+        if (user.role === 'admin') {
+            sessionStorage.setItem('pendingToast', 'Welcome to Admin Panel 🛡️');
+            sessionStorage.setItem('pendingToastType', 'success');
+            window.location.href = 'admin.html';
+            return;
+        }
+
         sessionStorage.setItem('pendingToast', 'Welcome back! 🎉');
         sessionStorage.setItem('pendingToastType', 'success');
         window.location.reload();
@@ -183,6 +226,14 @@ async function handleRegister(e) {
     const password = document.getElementById('regPassword').value;
 
     try {
+        if (role === 'provider') {
+            const aadhaarInput = document.getElementById('regAadhaar');
+            const panInput = document.getElementById('regPan');
+            if (!aadhaarInput.files || !aadhaarInput.files[0] || !panInput.files || !panInput.files[0]) {
+                throw new Error('Both Aadhaar Card and PAN Card are compulsory verification documents for all labours.');
+            }
+        }
+
         // 1. Register the user
         await apiPost('/auth/register', {
             email: email,
@@ -213,46 +264,84 @@ async function handleRegister(e) {
         localStorage.setItem('token', authToken);
         localStorage.setItem('user', JSON.stringify(currentUser));
 
-        // 3. If provider, create their profile
+        // Read chosen location from the address picker
+        const locHidden = document.getElementById('regLocation');
+        const locationVal = (locHidden && locHidden.value.trim()) ? locHidden.value.trim() : 'Maharashtra';
+
+        // 3. Create profile based on selected role
         if (role === 'provider') {
+            btn.textContent = 'Uploading documents...';
             const industry = document.getElementById('regIndustry').value;
             const skills = document.getElementById('regSkills').value || 'General Labour';
-            const location = document.getElementById('regLocation').value || 'Not specified';
             const wage = parseFloat(document.getElementById('regWage').value) || 500;
             const experience = parseInt(document.getElementById('regExperience').value) || 0;
             
-            // Read image if provided
+            // Upload Aadhaar Card
+            const aadhaarInput = document.getElementById('regAadhaar');
+            const aadhaarFormData = new FormData();
+            aadhaarFormData.append('file', aadhaarInput.files[0]);
+            const aadhaarRes = await fetch(`${API_BASE}/upload/`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken}` },
+                body: aadhaarFormData
+            });
+            if (!aadhaarRes.ok) throw new Error('Failed to upload Aadhaar Card. Ensure file is an image.');
+            const aadhaarData = await aadhaarRes.json();
+            const aadhaarUrl = aadhaarData.url;
+
+            // Upload PAN Card
+            const panInput = document.getElementById('regPan');
+            const panFormData = new FormData();
+            panFormData.append('file', panInput.files[0]);
+            const panRes = await fetch(`${API_BASE}/upload/`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken}` },
+                body: panFormData
+            });
+            if (!panRes.ok) throw new Error('Failed to upload PAN Card. Ensure file is an image.');
+            const panData = await panRes.json();
+            const panUrl = panData.url;
+
+            // Upload Profile Picture (if provided)
             let imageUrl = null;
             const fileInput = document.getElementById('regImage');
             if (fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                const reader = new FileReader();
-                imageUrl = await new Promise((resolve) => {
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.readAsDataURL(file);
+                const imgFormData = new FormData();
+                imgFormData.append('file', fileInput.files[0]);
+                const imgRes = await fetch(`${API_BASE}/upload/`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    body: imgFormData
                 });
+                if (imgRes.ok) {
+                    const imgData = await imgRes.json();
+                    imageUrl = imgData.url;
+                }
             }
 
             await apiPost('/profiles/provider', {
                 industry,
                 skills,
-                location,
+                location: locationVal,
                 expected_wage: wage,
                 experience_years: experience,
                 is_available: true,
-                image_url: imageUrl
+                image_url: imageUrl,
+                aadhaar_card_url: aadhaarUrl,
+                pan_card_url: panUrl,
+                approval_status: 'pending'
             }, true);
-        } else if (role === 'customer' || role === 'agency') {
-            // Create basic profile
+        } else if (role === 'customer') {
+            // Create customer profile with selected location
             await apiPost('/profiles/customer', {
                 company_name: fullName,
-                location: ''
+                location: locationVal
             }, true);
         }
 
         closeAllModals();
         
-        sessionStorage.setItem('pendingToast', role === 'provider' ? 'Worker profile created! You are now visible.' : 'Account created! Start searching.');
+        sessionStorage.setItem('pendingToast', role === 'provider' ? 'Labour profile registered! Waiting for admin approval before going live.' : 'Customer account created! Start searching.');
         sessionStorage.setItem('pendingToastType', 'success');
         window.location.reload();
 
@@ -277,16 +366,6 @@ const industryImages = {
 };
 const defaultImage = 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=800&auto=format&fit=crop';
 
-// Dummy fallback workers for when backend has no data
-const dummyWorkers = [
-    { id: 'dummy-1', user_id: -1, industry: 'Construction', skills: 'Senior Mason', experience_years: 8, location: 'Mumbai, MH', expected_wage: 800, is_available: true, _name: 'Rajesh Kumar' },
-    { id: 'dummy-2', user_id: -2, industry: 'Agriculture', skills: 'Tractor Operator', experience_years: 5, location: 'Pune, MH', expected_wage: 650, is_available: true, _name: 'Suresh Singh' },
-    { id: 'dummy-3', user_id: -3, industry: 'Electrical', skills: 'Industrial Electrician', experience_years: 12, location: 'Delhi, DL', expected_wage: 1000, is_available: true, _name: 'Amit Patel' },
-    { id: 'dummy-4', user_id: -4, industry: 'Construction', skills: 'General Helper', experience_years: 2, location: 'Navi Mumbai, MH', expected_wage: 500, is_available: true, _name: 'Ramesh Yadav' },
-    { id: 'dummy-5', user_id: -5, industry: 'Electrical', skills: 'HVAC Technician', experience_years: 7, location: 'Bengaluru, KA', expected_wage: 1200, is_available: true, _name: 'Vikas Sharma' },
-    { id: 'dummy-6', user_id: -6, industry: 'Cleaning', skills: 'Industrial Cleaner', experience_years: 3, location: 'Gurgaon, HR', expected_wage: 450, is_available: true, _name: 'Sanjay Gupta' },
-];
-
 // ================================
 // ACTIVE REQUESTS & UI
 // ================================
@@ -296,7 +375,7 @@ async function fetchActiveRequests() {
     if(!authToken || !currentUser) return;
     try {
         const role = currentUser.role;
-        const endpoint = (role === 'provider' || role === 'agency') ? '/hiring/provider/incoming-requests' : '/hiring/customer/my-requests';
+        const endpoint = (role === 'provider') ? '/hiring/provider/incoming-requests' : '/hiring/customer/my-requests';
         const res = await fetch(`${API_BASE}${endpoint}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
@@ -346,9 +425,9 @@ async function fetchActiveRequests() {
     } catch (e) {}
 }
 
-async function searchWorkers() {
-    const industry = document.getElementById('industryFilter').value;
-    const location = document.getElementById('locationFilter').value;
+async function searchWorkers(shouldScroll = false) {
+    const industry = document.getElementById('industryFilter')?.value || '';
+    const location = document.getElementById('locationFilter')?.value || '';
 
     let workers = [];
 
@@ -358,16 +437,15 @@ async function searchWorkers() {
         if (location) url += `&location=${encodeURIComponent(location)}`;
         workers = await apiGet(url);
     } catch (err) {
-        console.warn('Backend not reachable, using dummy data:', err.message);
-        workers = [...dummyWorkers];
-        // Apply client-side filters to dummy data
-        if (industry) workers = workers.filter(w => w.industry.toLowerCase() === industry.toLowerCase());
-        if (location) workers = workers.filter(w => w.location.toLowerCase().includes(location.toLowerCase()));
+        console.warn('Could not load workers:', err.message);
+        workers = [];
     }
 
     renderWorkers(workers);
-    // Scroll to worker section
-    document.getElementById('workers-section').scrollIntoView({ behavior: 'smooth' });
+    if (shouldScroll) {
+        const sec = document.getElementById('workers-section');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 function renderWorkers(workers) {
@@ -376,7 +454,7 @@ function renderWorkers(workers) {
 
     if (!workers || workers.length === 0) {
         grid.innerHTML = '';
-        noMsg.style.display = 'block';
+        noMsg.style.display = 'flex';
         return;
     }
 
@@ -385,36 +463,58 @@ function renderWorkers(workers) {
 
     workers.forEach((worker, index) => {
         const workerName = (worker.user && worker.user.full_name) ? worker.user.full_name : (worker.full_name || worker.skills.split(',')[0].trim() + ' Worker');
-        const image = worker.image_url || industryImages[worker.industry] || defaultImage;
+        const image = worker.image_url ? formatImageUrl(worker.image_url) : (industryImages[worker.industry] || defaultImage);
 
         const card = document.createElement('div');
-        card.className = 'worker-card';
-        card.style.animationDelay = `${index * 0.1}s`;
+        card.className = 'card-chai worker-card';
+        card.style.animationDelay = `${index * 0.05}s`;
         card.innerHTML = `
-            <div class="worker-image-container">
-                <div class="status-badge">${worker.is_available ? 'Available Now' : 'Unavailable'}</div>
-                <img src="${image}" alt="${workerName}" class="worker-image" loading="lazy">
+            <div class="worker-card-banner">
+                <span class="worker-card-status status-tag ${worker.is_available ? 'approved' : 'busy'}">
+                    ${worker.is_available ? 'Available' : 'Busy'}
+                </span>
+                <img src="${image}" alt="${workerName}" loading="lazy">
             </div>
-            <div class="worker-info">
-                <div class="worker-header">
-                    <div class="worker-name">${workerName}</div>
+            <div class="worker-card-body">
+                <div class="worker-name-role">
+                    <h3>${workerName}</h3>
+                    <div class="skills-tag">${worker.skills}</div>
                 </div>
-                <div class="worker-role">${worker.skills} ${worker.agency ? `<br><small style="color:var(--primary); font-weight:bold;">Managed by ${worker.agency.full_name}</small>` : ''}</div>
-                <div class="worker-meta">
-                    <span class="worker-tag"><i class="fa-solid fa-industry"></i> ${worker.industry}</span>
-                    <span class="worker-tag"><i class="fa-solid fa-briefcase"></i> ${worker.experience_years} yrs exp</span>
+
+                <div class="worker-meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">Trade</span>
+                        <span class="meta-value">${worker.industry}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Experience</span>
+                        <span class="meta-value">${worker.experience_years} yrs</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Location</span>
+                        <span class="meta-value location" title="${worker.location}">
+                            <i class="fa-solid fa-location-dot" style="font-size:0.75rem; color:var(--muted-foreground);"></i> ${worker.location}
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Daily rate</span>
+                        <span class="meta-value wage">₹${worker.expected_wage}</span>
+                    </div>
                 </div>
-                <div class="worker-details">
-                    <div><i class="fa-solid fa-location-dot"></i> ${worker.location}</div>
-                    <div class="wage"><i class="fa-solid fa-indian-rupee-sign"></i> ${worker.expected_wage}/day</div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-top:0.25rem;">
+                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(worker.location)}" target="_blank" rel="noopener" class="btn-map-link" onclick="event.stopPropagation();" title="View location on Google Maps">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Google Maps
+                    </a>
                 </div>
+
                 ${getWorkerActionHtml(worker, workerName)}
             </div>
         `;
         // Make entire card clickable for viewing profile
         card.addEventListener('click', (e) => {
-            // Prevent navigating if user clicked the hire button
-            if(e.target.closest('button')) return;
+            // Prevent navigating if user clicked an action button or link
+            if (e.target.closest('button') || e.target.closest('a')) return;
             window.location.href = `worker.html?id=${worker.id}`;
         });
         card.style.cursor = 'pointer';
@@ -425,30 +525,29 @@ function renderWorkers(workers) {
 }
 
 function getWorkerActionHtml(worker, workerName) {
-    if(!currentUser || currentUser.role !== 'customer') {
-        return ``; // Providers shouldn't see hire buttons at all
+    if (!currentUser || currentUser.role !== 'customer') {
+        return ``; // Providers do not see hiring request buttons
     }
-    const ownerId = worker.agency_id || worker.user_id;
-    // Check if we have an active request for this specific profile ID, not just the user ID
-    // Wait, userActiveRequests needs to be keyed by profile ID instead of user ID
+    const ownerId = worker.user_id;
     const req = userActiveRequests[worker.id];
     
-    if(!req) {
-        return `<button class="btn btn-primary hire-btn" onclick="openHireModal(${ownerId}, ${worker.id}, '${workerName.replace(/'/g, "\\'")}', ${worker.expected_wage})">Request to Hire</button>`;
+    if (!req) {
+        return `<button type="button" class="btn btn-secondary btn-full" style="margin-top:0.5rem;" onclick="openHireModal(${ownerId}, ${worker.id}, '${workerName.replace(/'/g, "\\'")}', ${worker.expected_wage})">Request to hire</button>`;
     } else if (req.status === 'pending') {
-        return `<button class="btn btn-secondary hire-btn" style="background:#e2e8f0; color:var(--text-light); border:none; pointer-events:none;">Request Sent</button>`;
+        return `<button type="button" class="btn btn-ghost btn-full" style="margin-top:0.5rem; opacity:0.7; pointer-events:none;">Request pending</button>`;
     } else if (req.status === 'accepted') {
-        return `<button class="btn btn-primary hire-btn" style="background:#22c55e;" onclick="window.location.href='chat.html?id=${req.id}'"><i class="fa-solid fa-message"></i> Start Chat</button>`;
+        return `<button type="button" class="btn btn-asym btn-full" style="margin-top:0.5rem;" onclick="window.location.href='chat.html?id=${req.id}'"><i class="fa-solid fa-message"></i> Start chat</button>`;
     }
-    return `<button class="btn btn-primary hire-btn" onclick="openHireModal(${ownerId}, ${worker.id}, '${workerName.replace(/'/g, "\\'")}', ${worker.expected_wage})">Request to Hire</button>`;
+    return `<button type="button" class="btn btn-secondary btn-full" style="margin-top:0.5rem;" onclick="openHireModal(${ownerId}, ${worker.id}, '${workerName.replace(/'/g, "\\'")}', ${worker.expected_wage})">Request to hire</button>`;
 }
 
 // ================================
 // FILTERS
 // ================================
 function filterByIndustry(industry) {
-    document.getElementById('industryFilter').value = industry;
-    searchWorkers();
+    const filterEl = document.getElementById('industryFilter');
+    if (filterEl) filterEl.value = industry;
+    searchWorkers(true);
 }
 
 // ================================
@@ -461,7 +560,7 @@ function openHireModal(providerId, profileId, workerName, suggestedWage) {
         return;
     }
     const role = localStorage.getItem('user_role');
-    if (role === 'provider' || role === 'agency') {
+    if (role === 'provider') {
         showToast('Only customers can send hiring requests.', 'warning');
         return;
     }
@@ -488,7 +587,7 @@ async function handleHireRequest(e) {
     try {
         const providerId = parseInt(document.getElementById('hireProviderId').value);
         if (providerId < 0) {
-            // Dummy worker — just simulate success
+            // Demo worker, just simulate success
             closeAllModals();
             showToast('Request sent successfully! (Demo mode)', 'success');
             return;
@@ -606,24 +705,7 @@ function showToast(message, type = 'info') {
 // INTERSECTION OBSERVER (ANIMATIONS)
 // ================================
 function setupIntersectionObserver() {
-    const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-                observer.unobserve(entry.target);
-            }
-        });
-    }, observerOptions);
-
-    const animatedElements = document.querySelectorAll('.industry-card, .worker-card, .step, .section-header');
-    animatedElements.forEach((el, index) => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.05}s`;
-        observer.observe(el);
-    });
+    // Keep all cards and elements naturally visible
 }
 
 // ================================
@@ -644,13 +726,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Only call on index.html
     if (document.getElementById('workerGrid')) {
-        searchWorkers();
+        searchWorkers(false);
     }
     
     // Only bind on index.html
     const regRole = document.getElementById('regRole');
     if (regRole) {
         regRole.addEventListener('change', toggleProviderFields);
+    }
+
+    // Initialize Address Autocomplete with State & City narrowing for Registration Modal
+    if (typeof setupAddressAutocomplete === 'function' && document.getElementById('regState')) {
+        setupAddressAutocomplete({
+            stateSelectId: 'regState',
+            citySelectId: 'regCity',
+            customCityInputId: 'regCustomCity',
+            addressInputId: 'regAddress',
+            dropdownId: 'regAddressDropdown',
+            hiddenLocationId: 'regLocation',
+            detectBtnId: 'regDetectGpsBtn'
+        });
     }
     
     // Show pending toasts after reload

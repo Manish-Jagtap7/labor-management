@@ -1,213 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Worker Profile - LabourGram</title>
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=20">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .profile-header {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-        }
-        .profile-img {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid var(--bg-light);
-        }
-        .profile-info h1 {
-            margin: 0 0 0.5rem 0;
-            font-size: 2rem;
-        }
-        .profile-info .role {
-            color: var(--text-light);
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-        }
-        .profile-stats {
-            display: flex;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-dark);
-            background: var(--bg-light);
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-        }
-        .portfolio-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        .portfolio-item {
-            width: 100%;
-            aspect-ratio: 1;
-            object-fit: cover;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: transform 0.2s;
-            border: 1px solid var(--border);
-        }
-        .portfolio-item:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        
-        /* Fullscreen Image Viewer */
-        .fs-viewer {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-        .fs-viewer.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .fs-img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        .fs-close {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-            background: none;
-            border: none;
-        }
-
-        @media (max-width: 768px) {
-            .profile-header {
-                flex-direction: column;
-                text-align: center;
-                gap: 1rem;
-                padding: 1.5rem;
-            }
-            .profile-img { width: 120px; height: 120px; }
-            .profile-stats {
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 0.5rem;
-            }
-            .portfolio-gallery {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.5rem;
-            }
-            .stat-item { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
-            .profile-info h1 { font-size: 1.75rem; }
-        }
-    </style>
+    <script src="theme.js"></script>
 </head>
 <body>
-    <nav class="navbar">
-        <a href="index.html" class="logo">
-            <i class="fa-solid fa-helmet-safety"></i>
-            Labour<span>Gram</span>
-        </a>
-        <div class="nav-links" style="display:flex; align-items:center;">
-            <a href="index.html">Home</a>
-            <div id="authLinks" class="auth-buttons"></div>
-        </div>
-    </nav>
+    <div class="chai-backdrop"></div>
 
-    <main style="max-width: 1200px; margin: 2rem auto; padding: 0 5%; min-height: 80vh;">
-        <div id="loading" style="text-align:center; padding: 3rem;">
-            <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--primary);"></i>
+    <header class="header">
+        <div class="header-inner">
+            <a href="index.html" class="logo">
+                Labour<span>Gram</span>
+            </a>
+
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle theme">
+                    <i class="fa-regular fa-sun"></i>
+                </button>
+                <a href="index.html" class="btn btn-secondary btn-sm">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="worker-profile-wrap">
+        <div id="loading" style="text-align:center; padding: 3.5rem;">
+            <p style="color:var(--muted-foreground);">Loading profile details...</p>
         </div>
         
         <div id="profileContent" style="display:none;">
-            <div class="profile-header card">
-                <img id="wpImage" src="" alt="Profile Picture" class="profile-img">
-                <div class="profile-info">
+            <!-- Profile Hero Card -->
+            <div class="card-chai worker-profile-hero">
+                <img id="wpImage" src="" alt="Worker profile photo" class="worker-profile-avatar" onerror="this.src='https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=300'">
+                
+                <div class="worker-profile-info">
                     <h1 id="wpName">Loading...</h1>
-                    <div class="role" id="wpRole"></div>
-                    <div class="profile-stats">
-                        <div class="stat-item"><i class="fa-solid fa-industry"></i> <span id="wpIndustry"></span></div>
-                        <div class="stat-item"><i class="fa-solid fa-briefcase"></i> <span id="wpExp"></span></div>
-                        <div class="stat-item"><i class="fa-solid fa-location-dot"></i> <span id="wpLoc"></span></div>
-                        <div class="stat-item"><i class="fa-solid fa-indian-rupee-sign"></i> <span id="wpWage"></span>/day</div>
+                    <div class="profile-role" id="wpRole"></div>
+
+                    <div class="worker-profile-chips">
+                        <div class="profile-chip"><i class="fa-solid fa-industry"></i> <span id="wpIndustry"></span></div>
+                        <div class="profile-chip"><i class="fa-solid fa-briefcase"></i> <span id="wpExp"></span></div>
+                        <div class="profile-chip">
+                            <i class="fa-solid fa-location-dot"></i> <span id="wpLoc"></span>
+                            <a id="wpMapLink" href="#" target="_blank" rel="noopener" class="btn-map-link" style="margin-left:0.35rem;" title="Open in Google Maps">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Maps
+                            </a>
+                        </div>
+                        <div class="profile-chip">
+                            <i class="fa-solid fa-indian-rupee-sign"></i> <strong id="wpWage" class="profile-wage-highlight" style="font-size:0.95rem;"></strong> / day
+                        </div>
                     </div>
-                    <div style="display:flex; gap: 1rem; align-items:center;">
-                        <span id="wpStatus" style="padding:0.5rem 1rem; border-radius:2rem; font-weight:bold; font-size:0.9rem;"></span>
+
+                    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+                        <span id="wpStatus" class="status-tag"></span>
                         <div id="wpAction"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="card" style="margin-bottom: 2rem; padding: 2rem; border-radius: 1rem; background: var(--surface); box-shadow: var(--shadow-sm);">
-                <h2 style="margin-bottom: 1rem;">About Me</h2>
-                <p id="wpBio" style="color:var(--text-light); line-height:1.6;"></p>
+            <!-- About Section -->
+            <div class="card-chai" style="margin-bottom: 1.5rem; padding: 1.75rem; border-radius: var(--radius-xl);">
+                <h2 style="font-family:var(--font-display); font-size:1.25rem; font-weight:600; margin-bottom: 0.75rem;">About worker</h2>
+                <p id="wpBio" style="color:var(--muted-foreground); line-height:1.6; font-size:0.92rem;"></p>
             </div>
 
-            <div class="card" id="portfolioSection" style="display:none; padding: 2rem; border-radius: 1rem; background: var(--surface); box-shadow: var(--shadow-sm);">
-                <h2 style="margin-bottom: 0.5rem;">Work Portfolio</h2>
-                <p style="color:var(--text-light); margin-bottom:1.5rem;">Click on any image to view it in full screen.</p>
-                <div class="portfolio-gallery" id="wpPortfolio"></div>
+            <!-- Portfolio Section -->
+            <div class="card-chai" id="portfolioSection" style="display:none; padding: 1.75rem; border-radius: var(--radius-xl); margin-bottom: 2rem;">
+                <h2 style="font-family:var(--font-display); font-size:1.25rem; font-weight:600; margin-bottom: 0.35rem;">Work portfolio</h2>
+                <p style="color:var(--muted-foreground); font-size:0.82rem; margin-bottom:1.25rem;">Authentic photos of recent completed site work. Click any photo to zoom.</p>
+                <div class="portfolio-grid" id="wpPortfolio" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));"></div>
             </div>
         </div>
     </main>
 
-    <!-- Fullscreen Viewer -->
-    <div class="fs-viewer" id="fsViewer" onclick="closeFullscreen()">
-        <button class="fs-close">&times;</button>
-        <img src="" id="fsImage" class="fs-img" onclick="event.stopPropagation()">
+    <!-- Fullscreen Viewer Modal -->
+    <div class="lightbox-modal" id="fsViewer" onclick="closeFullscreen()">
+        <button type="button" class="lightbox-close" onclick="closeFullscreen()"><i class="fa-solid fa-xmark"></i></button>
+        <img src="" id="fsImage" alt="Portfolio full screen" onclick="event.stopPropagation()">
     </div>
 
     <!-- Hire Modal (Reused) -->
     <div class="modal-overlay" id="hireModal">
-        <div class="modal">
-            <button class="modal-close" onclick="closeAllModals()">&times;</button>
-            <h2>Send Hiring Request</h2>
-            <p class="modal-subtitle">To: <strong id="hireWorkerName"></strong></p>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2>Send hiring request</h2>
+                <button type="button" class="modal-close-btn" onclick="closeAllModals()">&times;</button>
+            </div>
+            <p class="modal-subtitle">Requesting: <strong id="hireWorkerName" style="color:var(--foreground);"></strong></p>
             <form id="hireForm" onsubmit="handleHireRequest(event)">
                 <input type="hidden" id="hireProviderId">
                 <input type="hidden" id="hireProfileId">
                 <div class="form-group">
-                    <label>Job Description</label>
-                    <textarea id="hireJobDesc" required placeholder="Describe the work needed..." rows="3"></textarea>
+                    <label for="hireJobDesc">Job description</label>
+                    <textarea id="hireJobDesc" required placeholder="Describe the specific work required, site location, and hours..." rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Date Needed</label>
+                    <label for="hireDateNeeded">Date needed</label>
                     <input type="date" id="hireDateNeeded" required>
                 </div>
                 <div class="form-group">
-                    <label>Proposed Daily Wage (₹)</label>
+                    <label for="hireWage">Proposed daily wage (₹)</label>
                     <input type="number" id="hireWage" required min="1">
                 </div>
                 <div class="form-error" id="hireError"></div>
-                <button type="submit" class="btn btn-primary btn-full" id="hireBtn">Send Request</button>
+                <button type="submit" class="btn btn-asym btn-full" id="hireBtn" style="margin-top:1rem;">Send request</button>
             </form>
         </div>
     </div>
     
     <div class="toast" id="toast"></div>
 
-    <script src="script.js?v=5"></script>
-    <script src="worker.js?v=5"></script>
+    <script src="address-autocomplete.js?v=20"></script>
+    <script src="script.js?v=20"></script>
+    <script src="worker.js?v=20"></script>
 </body>
 </html>
