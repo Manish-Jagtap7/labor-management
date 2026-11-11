@@ -12,12 +12,11 @@ On the other side, the workers themselves struggle to find consistent work and o
 
 ## 2. Our Solution
 **LabourGram** is a digital marketplace specifically built for the unorganized labour sector. 
-It acts as a direct bridge between **Customers** (people who need work done) and **Providers** (individual workers or labour agencies).
-- **For Customers:** They can search for workers by industry, location, and skills, view their portfolios/past work, see their expected daily wages, and send them a direct "Hiring Request."
-- **For Individual Workers:** They can create a digital profile, set their expected wage, upload photos of their past work, and receive job requests directly on their phone.
-- **For Labour Agencies (Providers):** Contractors who manage multiple labourers can create a single agency account, add multiple worker profiles under their umbrella, and manage all their hiring requests and chats in one place.
+It acts as a direct bridge between **Customers** (people who need work done) and **Labours** (individual workers looking for work).
+- **For Customers:** They can search for workers by industry, location, and skills, view their portfolios/past work, see their expected daily wages, view their location on Google Maps, and send them a direct "Hiring Request."
+- **For Labours (Workers):** They can create a digital profile, set their expected wage, pinpoint their precise location using State/City/Address autocomplete or device GPS, upload photos of their past work, and receive job requests directly on their phone.
 
-Once a customer sends a hiring request and the worker (or agency) accepts it, a **Live Chat** opens up so they can finalize the details, location, and timings.
+Once a customer sends a hiring request and the labour accepts it, a **Live Chat** opens up so they can finalize the details, location, and timings.
 
 ---
 
@@ -27,6 +26,7 @@ To build this, we used modern, fast, and scalable technologies. Here is the list
 ### Frontend (What the user sees)
 - **HTML5 & CSS3:** The structural bones and the styling of the website. We used standard HTML and pure Vanilla CSS (no bloated frameworks) to keep the website extremely fast and easy to maintain. We used modern CSS techniques like CSS Grid, Flexbox, and Glassmorphism for a premium, mobile-first design.
 - **JavaScript (Vanilla):** The logic that runs inside the user's browser. It handles button clicks, fetching data from the backend, uploading images, and dynamically updating the screen without reloading the page.
+- **Address Autocomplete & Geocoding Engine (`address-autocomplete.js`):** A custom, client-side engine supporting all 28 Indian States and Union Territories. It allows users to pick their State and City first, narrowing down OpenStreetMap Nominatim / Photon address autocomplete suggestions strictly to that specific city, with built-in 450ms debouncing, 1 req/sec throttling, in-memory query caching, and GPS auto-detection (`navigator.geolocation`).
 - **FontAwesome:** A library used to display the beautiful, scalable icons you see all over the website (like the search icon, briefcases, and location pins).
 
 ### Backend (The brain behind the scenes)
@@ -42,31 +42,34 @@ To build this, we used modern, fast, and scalable technologies. Here is the list
 
 ## 4. The Workflow: How It Actually Works Behind the Scenes
 
-This platform serves three distinct types of users. Let's walk through how each user interacts with the system and what happens in the code.
+This platform serves two core user profiles: **Customers** and **Labours**. Let's walk through how each user interacts with the system and what happens in the code.
 
 ### Workflow 1: The Customer's Journey (Hiring Someone)
-1. **Searching for Workers:** The customer goes to the main page and types "Mumbai" in the location filter.
-   - *Behind the Scenes:* The frontend asks the Backend (`/search/providers?location=Mumbai`) for a list of workers. The Backend searches the database for all workers in Mumbai and sends back a list of their names, wages, and photos. The frontend dynamically creates HTML "Worker Cards" and displays them.
-2. **Sending a Hiring Request:** The customer clicks "Request to Hire" on a worker's card, fills out the date and job description, and hits send.
+1. **Registration & Location Selection:** The customer signs up, selecting State (e.g., Maharashtra) and City (e.g., Nashik), and enters or detects their address via GPS.
+   - *Behind the Scenes:* The frontend bundles the customer's credentials and precise composite location and creates a user and Customer Profile in the database (`/auth/register` and `/profiles/customer`).
+2. **Searching for Workers:** The customer goes to the main page and types their city or area in the location filter.
+   - *Behind the Scenes:* The frontend asks the Backend (`/search/providers?location=Nashik`) for a list of workers. The Backend searches the database for all workers in that area and sends back a list of their names, wages, and photos. The frontend dynamically creates HTML "Worker Cards" with direct Google Maps links and displays them.
+3. **Sending a Hiring Request:** The customer clicks "Request to Hire" on a worker's card, fills out the date and job description, and hits send.
    - *Behind the Scenes:* The frontend sends this request to the Backend (`/hiring/request`). The Backend saves a new "Hiring Request" into the database with a status of `pending`.
-3. **Chatting:** Once the worker accepts, the customer clicks "Start Chat" and sends a message.
+4. **Chatting:** Once the worker accepts, the customer clicks "Start Chat" and sends a message.
    - *Behind the Scenes:* The frontend opens a **WebSocket** connection to the Backend. When the customer types a message, it travels through the open WebSocket to the Backend, which saves it in the database and instantly pushes it to the worker's screen.
 
-### Workflow 2: The Individual Worker's Journey (Getting Hired)
-1. **Registration & Profile Creation:** An individual worker signs up, selecting the "Individual Worker" role, and fills out their skills, location, and wage.
+### Workflow 2: The Labour's Journey (Getting Hired)
+1. **Registration & Profile Creation:** An individual labour signs up, selecting the "Labour (Looking for work)" role, chooses their State, City, and Area address (or clicks Auto-Detect via GPS), and fills out their skills, industry, experience, and expected daily wage.
    - *Behind the Scenes:* The frontend bundles this data and sends it to the Backend (`/auth/register`). The Backend saves the user and automatically creates a corresponding "Provider Profile" in the database linked to that user.
-2. **Updating the Portfolio:** The worker logs in, goes to their Dashboard, adds a "Bio", and uploads photos of their past work (e.g., a painted wall).
-   - *Behind the Scenes:* The frontend sends the image files to the Backend (`/upload/image`). The Backend saves the files securely on the server's hard drive and saves the file URLs to the worker's profile in the database.
-3. **Accepting Jobs:** The worker checks their Dashboard and sees a new `pending` hiring request from a customer. They click "Accept".
-   - *Behind the Scenes:* The frontend tells the Backend to update the request (`/hiring/request/{id}/status`). The Backend changes the database status to `accepted` and unlocks a unique Chat Room ID so the worker and customer can talk.
+2. **Updating the Profile & Portfolio:** The labour logs in, goes to their Dashboard, updates their bio, availability, and uploads photos of past work (e.g., a painted wall, construction work).
+   - *Behind the Scenes:* The frontend sends the image files to the Backend (`/upload/image`). The Backend saves the files securely on the server's hard drive and saves the file URLs to the labour's profile in the database.
+3. **Accepting Jobs & Live Negotiation:** The labour checks their Dashboard and sees a new `pending` hiring request from a customer. They click "Accept".
+   - *Behind the Scenes:* The frontend tells the Backend to update the request (`/hiring/request/{id}/status`). The Backend changes the database status to `accepted` and unlocks a unique Chat Room ID so the labour and customer can discuss details in real-time.
 
-### Workflow 3: The Labour Agency's Journey (Managing Multiple Workers)
-1. **Agency Registration:** A contractor signs up as an "Agency" so they can list all the laborers who work under them.
-   - *Behind the Scenes:* Just like individual workers, the Backend creates the user, but marks their role strictly as `agency`. 
-2. **Adding Agency Workers:** The agency goes to their Dashboard and clicks "Add New Worker". They fill out a form for *Worker A* (e.g., Gaurav, a Mason) and upload his photos.
-   - *Behind the Scenes:* Instead of updating their own profile, the frontend sends a request to a special endpoint (`/profiles/provider/agency/worker`). The Backend creates a *brand new* "Provider Profile" in the database, but instead of linking it to a new User, it links it directly to the Agency's ID. This allows one agency to own unlimited worker profiles.
-3. **Managing Incoming Requests:** A customer sees *Worker A* on the main page and sends a hiring request. 
-   - *Behind the Scenes:* The Backend realizes *Worker A* is managed by an agency. It links the hiring request to both *Worker A*'s specific profile ID and the *Agency*'s user ID. When the Agency logs into their dashboard, they see the request labeled specifically for *Worker A*, allowing the contractor to negotiate on behalf of their worker via the WebSocket chat.
+### Workflow 3: The Administrator's Journey (Quality Control & Verification)
+1. **Admin Login & Auto-Routing:** The platform administrator logs in through the standard login modal using admin credentials (`admin@labourgram.com` / `admin123`).
+   - *Behind the Scenes:* The frontend inspects the user profile returned by `/auth/me`. Upon detecting `user.role === 'admin'`, it automatically routes the administrator to the executive **Admin Dashboard** (`admin.html`) and adds an "Admin Panel" button to the main navigation bar.
+2. **Reviewing New Labour Profiles:** When a new worker signs up, their profile enters the `pending` approval status and does not appear on the homepage search results. The admin sees these profiles in the "Pending Approvals" tab with full details, daily wage, skills, precise location map link, and uploaded portfolio photos (with a click-to-zoom lightbox).
+   - *Behind the Scenes:* The admin panel calls `GET /admin/labours?status=pending` to retrieve all unverified profiles.
+3. **Approving or Rejecting with Feedback:**
+   - **If Approved:** The admin clicks "Approve". The backend sets `approval_status = 'approved'` via `PUT /admin/labours/{id}/approve`. The worker immediately becomes visible on the homepage search results, and their dashboard updates to show a green "Approved & Active" badge.
+   - **If Rejected:** The admin clicks "Reject", selects or types a reason (e.g., "Photo clarity needs improvement"), and submits. The backend updates `approval_status = 'rejected'` and stores the `rejection_reason`. The worker's dashboard immediately presents an action-required notice with the admin's exact feedback, and prompts them with an "Update & Re-apply" button to fix their profile and resubmit for review.
 
 ---
 
@@ -75,18 +78,22 @@ This platform serves three distinct types of users. Let's walk through how each 
 This project is split into two main folders: `frontend` (the UI) and `backend` (the server). Here is a breakdown of every important file.
 
 ### Frontend Files (`/frontend`)
-- **`index.html`**: The main homepage. It contains the navigation bar, the hero search section, and the grid where all the worker cards are displayed.
-- **`style.css`**: The central design file. It controls the colors, fonts, spacing, button styles, and makes sure the website looks great on mobile phones (Responsive Design).
-- **`script.js`**: The main logic for the homepage. It fetches the list of workers from the backend, renders the worker cards, and handles the Login/Signup popup windows.
-- **`dashboard.html`**: The UI for the user's private dashboard. Depending on who logs in (Customer, Worker, or Agency), this page adapts to show their specific tools.
-- **`dashboard.js`**: Controls the dashboard. It handles updating user profiles, managing agency workers, uploading portfolio images, and accepting/declining hiring requests.
-- **`worker.html` & `worker.js`**: The UI and logic for the detailed profile page of a specific worker. It fetches their full bio, stats, and displays their past work images in a grid.
+- **`index.html`**: The main homepage. It contains the navigation bar, the hero search section, the worker cards grid, and the unified registration modal with state/city address autocomplete.
+- **`style.css`**: The central design file. It controls the colors, fonts, spacing, button styles, address dropdowns, and makes sure the website looks great on mobile phones (Responsive Design).
+- **`address-autocomplete.js`**: Indian State & City dataset and address autocomplete engine. Provides client-side debouncing, 1 req/sec rate limiting, memory caching, and GPS reverse geocoding.
+- **`script.js`**: The main logic for the homepage. It fetches the list of approved workers from the backend, renders worker cards with Google Maps links, and handles Login, Signup, and Admin auto-routing.
+- **`dashboard.html`**: The UI for the user's private dashboard for viewing chats, managing requests, checking profile approval status, and editing profile details.
+- **`dashboard.js`**: Controls the dashboard. It handles updating user profiles with State/City address autocomplete, uploading portfolio images, re-applying for approval, and accepting/declining hiring requests.
+- **`admin.html`**: The dedicated executive Admin Dashboard interface. Features platform KPI stats cards, a review feed for pending labour approvals, directory tables for all labours and customers, a rejection feedback modal, and a fullscreen portfolio lightbox.
+- **`admin.js`**: The controller for the Admin Dashboard. Manages authentication guards, fetching stats, approving/rejecting labour profiles, filtering directories, and toggling user account status.
+- **`worker.html` & `worker.js`**: The UI and logic for the detailed profile page of a specific worker. It fetches their full bio, stats, direct Google Maps button, and displays their past work images in a grid.
 - **`chat.html` & `chat.js`**: The interface and logic for the live messaging system. It connects to the backend WebSocket, listens for incoming messages, and displays them as chat bubbles.
 
 ### Backend Files (`/backend/app`)
 
 #### API Endpoints (The routes the frontend talks to)
 - **`api.py`**: The main router that connects all the individual API endpoints below into one cohesive system.
+- **`endpoints/admin.py`**: Handles platform administrative operations: aggregated KPI metrics, reviewing and approving/rejecting labour profiles with reasons, viewing customer directories, and toggling user active/suspended state.
 - **`endpoints/auth.py`**: Handles user Registration and Login, verifying passwords, and generating security Tokens.
 - **`endpoints/profiles.py`**: Handles everything related to profiles—fetching profile data, letting workers update their bio, and letting agencies add new workers.
 - **`endpoints/search.py`**: Contains the logic to search and filter the database for workers based on industry and location.

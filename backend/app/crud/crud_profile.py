@@ -56,7 +56,7 @@ def search_providers(
     skip: int = 0,
     limit: int = 20
 ):
-    query = db.query(ProviderProfile)
+    query = db.query(ProviderProfile).filter(ProviderProfile.approval_status == "approved")
     
     if industry:
         query = query.filter(ProviderProfile.industry.ilike(f"%{industry}%"))

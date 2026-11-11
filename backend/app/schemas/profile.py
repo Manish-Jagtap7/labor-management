@@ -14,6 +14,10 @@ class ProviderProfileBase(BaseModel):
     bio: Optional[str] = None
     image_url: Optional[str] = None
     portfolio_urls: Optional[str] = None
+    aadhaar_card_url: Optional[str] = None
+    pan_card_url: Optional[str] = None
+    approval_status: Optional[str] = "pending"
+    rejection_reason: Optional[str] = None
 
 class ProviderProfileCreate(ProviderProfileBase):
     pass
@@ -25,6 +29,10 @@ class ProviderProfileUpdate(ProviderProfileBase):
     expected_wage: Optional[float] = None
     is_available: Optional[bool] = None
     portfolio_urls: Optional[str] = None
+    aadhaar_card_url: Optional[str] = None
+    pan_card_url: Optional[str] = None
+    approval_status: Optional[str] = None
+    rejection_reason: Optional[str] = None
 
 class ProviderProfileResponse(ProviderProfileBase):
     id: int

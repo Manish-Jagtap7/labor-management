@@ -29,3 +29,21 @@ class HiringRequest(Base):
     customer = relationship("User", foreign_keys=[customer_id], backref="outgoing_requests")
     provider = relationship("User", foreign_keys=[provider_id], backref="incoming_requests")
     profile = relationship("ProviderProfile", foreign_keys=[profile_id], backref="hiring_requests")
+
+    @property
+    def customer_location(self):
+        if self.customer and self.customer.customer_profile:
+            cp = self.customer.customer_profile
+            item = cp[0] if isinstance(cp, list) and len(cp) > 0 else (None if isinstance(cp, list) else cp)
+            if item:
+                return item.location
+        return None
+
+    @property
+    def customer_phone(self):
+        if self.customer and self.customer.customer_profile:
+            cp = self.customer.customer_profile
+            item = cp[0] if isinstance(cp, list) and len(cp) > 0 else (None if isinstance(cp, list) else cp)
+            if item:
+                return item.contact_phone
+        return None

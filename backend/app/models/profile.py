@@ -19,6 +19,10 @@ class ProviderProfile(Base):
     bio = Column(Text, nullable=True)
     image_url = Column(Text, nullable=True)
     portfolio_urls = Column(Text, nullable=True) # comma separated image urls
+    aadhaar_card_url = Column(Text, nullable=True)
+    pan_card_url = Column(Text, nullable=True)
+    approval_status = Column(String, default="pending", index=True) # pending, approved, rejected
+    rejection_reason = Column(Text, nullable=True)
 
     user = relationship("User", foreign_keys=[user_id], backref="provider_profile")
     agency = relationship("User", foreign_keys=[agency_id], backref="managed_labours")

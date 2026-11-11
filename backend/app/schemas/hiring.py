@@ -27,6 +27,8 @@ class HiringRequestResponse(HiringRequestBase):
     customer: Optional['UserResponse'] = None
     provider: Optional['UserResponse'] = None
     profile: Optional['ProviderProfileResponse'] = None
+    customer_location: Optional[str] = None
+    customer_phone: Optional[str] = None
 
     class Config:
         from_attributes = True

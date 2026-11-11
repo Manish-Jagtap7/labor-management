@@ -28,3 +28,4 @@ Thumbs.db
 # currently only contains the non-confidential SQLite connection string.
 implementation.txt
 *.pdf
+.agents/
