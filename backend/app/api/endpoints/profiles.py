@@ -83,6 +83,9 @@ def update_my_provider_profile(
     profile = crud_profile.get_provider_profile_by_user(db, user_id=current_user.id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
+    if profile.approval_status == "rejected":
+        profile.approval_status = "pending"
+        profile.rejection_reason = None
     return crud_profile.update_provider_profile(db=db, db_profile=profile, profile_in=profile_in)
 
 @router.put("/provider/agency/worker/{profile_id}", response_model=ProviderProfileResponse)

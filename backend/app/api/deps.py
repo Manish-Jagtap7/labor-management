@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import SessionLocal
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.crud.crud_user import get_user_by_email
 
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -48,3 +48,13 @@ async def get_current_user_ws(token: str, db: Session) -> User | None:
         return None
     user = get_user_by_email(db, email=token_data)
     return user
+
+def get_current_admin_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if current_user.role != UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have administrative privileges",
+        )
+    return current_user

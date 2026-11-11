@@ -2,7 +2,7 @@ import os
 import uuid
 import shutil
 from typing import Any
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Request
 from app.api import deps
 from app.models.user import User
 
@@ -13,6 +13,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(deps.get_current_user),
 ) -> Any:
@@ -31,5 +32,5 @@ async def upload_file(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
-    # Return the URL path as a relative URL
-    return {"url": f"/uploads/{unique_filename}"}
+    base = str(request.base_url).rstrip("/")
+    return {"url": f"{base}/uploads/{unique_filename}"}

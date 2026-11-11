@@ -20,6 +20,27 @@ app.add_middleware(
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
+@app.on_event("startup")
+def ensure_admin_user():
+    from app.core.database import SessionLocal
+    from app.models.user import User, UserRole
+    from app.core.security import get_password_hash
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter_by(email="admin@labourgram.com").first()
+        if not admin:
+            admin = User(
+                email="admin@labourgram.com",
+                full_name="Platform Administrator",
+                hashed_password=get_password_hash("admin123"),
+                role=UserRole.admin,
+                is_active=True
+            )
+            db.add(admin)
+            db.commit()
+    finally:
+        db.close()
+
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Serve the frontend

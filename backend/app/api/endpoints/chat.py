@@ -26,8 +26,11 @@ class ConnectionManager:
 
     async def broadcast_to_room(self, message: str, request_id: int):
         if request_id in self.active_connections:
-            for connection in self.active_connections[request_id]:
-                await connection.send_text(message)
+            for connection in list(self.active_connections[request_id]):
+                try:
+                    await connection.send_text(message)
+                except Exception:
+                    self.disconnect(connection, request_id)
 
 manager = ConnectionManager()
 
@@ -57,7 +60,9 @@ async def websocket_endpoint(websocket: WebSocket, request_id: int, token: str, 
                 "created_at": new_msg.created_at.isoformat() if new_msg.created_at else None
             })
             await manager.broadcast_to_room(payload, request_id)
-    except WebSocketDisconnect:
+    except Exception:
+        pass
+    finally:
         manager.disconnect(websocket, request_id)
 
 @router.get("/history/{request_id}", response_model=List[MessageResponse])
